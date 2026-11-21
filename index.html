@@ -407,18 +407,14 @@
         </button>
       </div>
 
-      <!-- 3. EVENT & DAILY SCHEDULE QUEUE PANEL -->
+      <!-- 3. UNIFIED EVENT & DAILY SCHEDULE QUEUE PANEL (HANDS-FREE) -->
       <div class="flex-1 min-h-0 flex flex-col gap-1.5 overflow-hidden">
         <div class="flex items-center justify-between gap-1.5 shrink-0 px-0.5">
-          <!-- Mode Switcher: Sự kiện vs Lịch học -->
-          <div class="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 min-w-0">
-            <button id="tab-events-btn" type="button" class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide bg-sky-500/25 text-sky-200 border border-sky-400/35 transition shrink-0">
-              Sự kiện
-            </button>
-            <button id="tab-schedule-btn" type="button" class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-slate-400 hover:text-white border border-transparent transition shrink-0 flex items-center gap-1">
-              <span>Lịch học</span>
-              <span id="schedule-badge-count" class="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-500/25 text-indigo-300 font-mono">0</span>
-            </button>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-200 truncate">
+              Hàng chờ Sự kiện &amp; Lịch học
+            </span>
+            <span id="unified-badge-count" class="px-1.5 py-0.5 rounded-full text-[9px] bg-sky-500/20 text-sky-300 border border-sky-400/30 font-mono font-bold shrink-0">0</span>
           </div>
 
           <div class="flex items-center gap-1.5 shrink-0">
@@ -678,14 +674,14 @@
          ---------------------------------------------------------------------- */
       let events = loadEvents();
       let classSchedule = loadSchedule();
-      let activeQueueTab = 'events'; // 'events' | 'schedule'
-      let selectedEventId = null; // null = auto-follow nearest upcoming event
+      let selectedEventId = null; // null = auto-follow nearest upcoming event or class
       let currentFilter = 'upcoming'; // 'upcoming' | 'past' | 'all'
       let tickerIndex = 0;
       let wakeLockSentinel = null;
       let confirmResetArmed = false;
       let confirmDeleteArmed = false;
-
+      let autoScrollDirection = 1;
+      let autoScrollPausedUntil = 0;
       /* ----------------------------------------------------------------------
          3. LOCALSTORAGE HELPERS
          ---------------------------------------------------------------------- */
@@ -823,11 +819,11 @@
       }
 
       /* ----------------------------------------------------------------------
-         7. SORTING & ACTIVE EVENT RESOLUTION
+         7. SORTING & ACTIVE EVENT RESOLUTION (UNIFIED EVENTS + CLASS SCHEDULE)
          ---------------------------------------------------------------------- */
       function getSortedEvents(nowMs) {
-        const activeCollection = activeQueueTab === 'schedule' ? classSchedule : events;
-        const withTime = activeCollection.map((ev) => ({
+        const unifiedCollection = [...events, ...classSchedule];
+        const withTime = unifiedCollection.map((ev) => ({
           ...ev,
           timestamp: new Date(ev.datetime).getTime()
         }));
@@ -844,11 +840,7 @@
       }
 
       function resolveFeaturedEvent(sortedData) {
-        // Allow inspecting any selected event OR class item
-        const combinedPool = [...events, ...classSchedule].map((ev) => ({
-          ...ev,
-          timestamp: new Date(ev.datetime).getTime()
-        }));
+        const combinedPool = [...sortedData.upcoming, ...sortedData.past];
 
         if (selectedEventId) {
           const found = combinedPool.find((e) => e.id === selectedEventId);
@@ -999,6 +991,7 @@
         document.getElementById('stat-total').textContent = totalCount;
         document.getElementById('stat-percent').textContent = `${completionPct}%`;
         document.getElementById('stats-progress-bar').style.width = `${completionPct}%`;
+        document.getElementById('unified-badge-count').textContent = upcomingCount;
 
         // Update filter button active styles
         document.querySelectorAll('.filter-stat-btn').forEach((btn) => {
@@ -1009,20 +1002,6 @@
             btn.classList.remove('ring-1', 'ring-sky-400/70', 'bg-sky-500/15');
           }
         });
-
-        // Update Tab buttons (Sự kiện vs Lịch học)
-        const tabEventsBtn = document.getElementById('tab-events-btn');
-        const tabScheduleBtn = document.getElementById('tab-schedule-btn');
-        const upcomingClassCount = classSchedule.filter((c) => new Date(c.datetime).getTime() > nowMs).length;
-        document.getElementById('schedule-badge-count').textContent = upcomingClassCount;
-
-        if (activeQueueTab === 'events') {
-          tabEventsBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide bg-sky-500/25 text-sky-200 border border-sky-400/35 transition shrink-0';
-          tabScheduleBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-slate-400 hover:text-white border border-transparent transition shrink-0 flex items-center gap-1';
-        } else {
-          tabEventsBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-slate-400 hover:text-white border border-transparent transition shrink-0';
-          tabScheduleBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide bg-indigo-500/25 text-indigo-200 border border-indigo-400/35 transition shrink-0 flex items-center gap-1';
-        }
 
         const filterLabels = {
           upcoming: 'Sắp tới',
@@ -1293,11 +1272,11 @@
           noteInput.value = ev.note || '';
           deleteBtn.classList.remove('hidden');
         } else {
-          titleHeading.textContent = activeQueueTab === 'schedule' ? 'Thêm Buổi Học Mới' : 'Thêm Sự Kiện / Thông Báo Mới';
+          titleHeading.textContent = 'Thêm Sự Kiện / Lịch Học Mới';
           idInput.value = '';
           titleInput.value = '';
           dtInput.value = toLocalDatetimeInputValue(null);
-          tagInput.value = activeQueueTab === 'schedule' ? 'LỊCH HỌC' : 'THÔNG BÁO';
+          tagInput.value = 'THÔNG BÁO';
           locInput.value = 'Trường Đại học Trà Vinh';
           noteInput.value = '';
           deleteBtn.classList.add('hidden');
@@ -1366,18 +1345,6 @@
           selectedEventId = null;
           tickDashboard();
           showToast('Đã quay về mục sắp diễn ra gần nhất', 'info');
-        });
-
-        // Queue Tab Switchers (Sự kiện vs Lịch học)
-        document.getElementById('tab-events-btn').addEventListener('click', () => {
-          activeQueueTab = 'events';
-          selectedEventId = null;
-          tickDashboard();
-        });
-        document.getElementById('tab-schedule-btn').addEventListener('click', () => {
-          activeQueueTab = 'schedule';
-          selectedEventId = null;
-          tickDashboard();
         });
 
         // Weather refresh on click
@@ -1458,13 +1425,11 @@
               location,
               note
             };
-            if (tag === 'LỊCH HỌC' || activeQueueTab === 'schedule') {
+            if (tag === 'LỊCH HỌC') {
               classSchedule.push(newItem);
-              activeQueueTab = 'schedule';
               saveSchedule();
             } else {
               events.push(newItem);
-              activeQueueTab = 'events';
               saveEvents();
             }
             selectedEventId = newId;
@@ -1532,6 +1497,38 @@
         setInterval(tickDashboard, 1000);
         setInterval(rotateUrgentTicker, 8000);
         setInterval(() => fetchTraVinhWeather(false), 15 * 60 * 1000);
+
+        // Hands-free gentle auto-scroll for broken-touchscreen StandBy phones
+        const queueEl = document.getElementById('event-queue-list');
+        if (queueEl) {
+          ['wheel', 'touchstart', 'pointerdown'].forEach((evtName) => {
+            queueEl.addEventListener(evtName, () => {
+              autoScrollPausedUntil = Date.now() + 15000;
+            }, { passive: true });
+          });
+
+          setInterval(() => {
+            if (Date.now() < autoScrollPausedUntil) return;
+            const maxScroll = queueEl.scrollHeight - queueEl.clientHeight;
+            if (maxScroll <= 4) return;
+
+            if (autoScrollDirection === 1) {
+              if (queueEl.scrollTop >= maxScroll - 2) {
+                autoScrollDirection = -1;
+                autoScrollPausedUntil = Date.now() + 4000;
+              } else {
+                queueEl.scrollTop += 1;
+              }
+            } else {
+              if (queueEl.scrollTop <= 2) {
+                autoScrollDirection = 1;
+                autoScrollPausedUntil = Date.now() + 5000;
+              } else {
+                queueEl.scrollTop -= 2;
+              }
+            }
+          }, 80);
+        }
 
         // Auto-refresh page every 12 hours (43,200,000 ms) for long-term StandBy stability
         const AUTO_REFRESH_12H_MS = 12 * 60 * 60 * 1000;
