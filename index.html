@@ -261,54 +261,56 @@
       </div>
 
       <!-- 3. IMPORTANT EVENT INFORMATION CARD -->
-      <div class="standby-subcard rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1.5 min-h-0 flex-1 overflow-y-auto custom-scroll">
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-sky-400/90 mb-0.5">
+      <div class="standby-subcard rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-2 min-h-0 flex-1 overflow-y-auto custom-scroll">
+        <!-- Title + DateTime + Location aligned horizontally on the same row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-sky-400/90 leading-none mb-1">
               THÔNG TIN QUAN TRỌNG
             </div>
-            <h1 id="left-event-title" class="text-sm sm:text-base lg:text-lg font-extrabold text-white leading-snug truncate">
+            <h1 id="left-event-title" class="text-sm sm:text-base lg:text-lg font-extrabold text-white leading-tight truncate">
               Thi GDQP&amp;AN — Học phần 4
             </h1>
           </div>
-        </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] sm:text-xs">
-          <!-- Date & Time -->
-          <div class="flex items-center gap-1.5 text-slate-200 bg-slate-900/60 rounded-lg px-2 py-1 border border-white/5 min-w-0">
-            <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span id="left-event-datetime" class="font-medium truncate tabular-nums">07:00 • Chủ Nhật, 22/11/2026</span>
-          </div>
+          <!-- Horizontal Date/Time & Location Pills -->
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-1.5 text-[11px] sm:text-xs shrink-0">
+            <!-- Date & Time -->
+            <div class="flex items-center gap-1.5 text-slate-100 bg-slate-900/75 rounded-lg px-2 py-1 border border-white/10 shrink-0">
+              <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span id="left-event-datetime" class="font-semibold tabular-nums whitespace-nowrap">07:00 • CN, 22/11/2026</span>
+            </div>
 
-          <!-- Location / Room -->
-          <div class="flex items-center gap-1.5 text-slate-200 bg-slate-900/60 rounded-lg px-2 py-1 border border-white/5 min-w-0">
-            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-            </svg>
-            <span id="left-event-location" class="font-medium truncate">Bãi tập 09 — Khu GDQP</span>
+            <!-- Location / Room -->
+            <div class="flex items-center gap-1.5 text-slate-100 bg-slate-900/75 rounded-lg px-2 py-1 border border-white/10 max-w-[180px] lg:max-w-[230px]">
+              <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              <span id="left-event-location" class="font-semibold truncate">Bãi tập 09 — Khu GDQP</span>
+            </div>
           </div>
         </div>
 
         <!-- Preparation / Urgent Note -->
-        <div class="flex items-start gap-1.5 text-[11px] sm:text-xs text-amber-200/95 bg-amber-500/10 border border-amber-400/20 rounded-lg px-2.5 py-1.5">
-          <svg class="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="flex items-center gap-2.5 text-amber-200 bg-amber-500/12 border border-amber-400/30 rounded-xl px-3 py-2 sm:px-3.5 sm:py-2.5">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
           </svg>
-          <p id="left-event-note" class="leading-snug line-clamp-2">
+          <p id="left-event-note" class="text-xs sm:text-sm md:text-[15px] font-semibold leading-snug line-clamp-2">
             Tập trung lúc 06:45, mang đầy đủ thẻ SV và mặc đồng phục quốc phòng.
           </p>
         </div>
       </div>
 
-      <!-- 4. BOTTOM URGENT REMINDER TICKER -->
-      <div class="shrink-0 flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/5 text-[10px] sm:text-[11px]">
-        <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-400/30 font-bold uppercase tracking-wider text-[9px] shrink-0">
+      <!-- 4. BOTTOM URGENT REMINDER TICKER (ENLARGED FOR HIGH VISIBILITY) -->
+      <div class="shrink-0 flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-rose-950/35 border border-rose-400/30 shadow-inner">
+        <span class="px-2 py-1 rounded-lg bg-rose-500/25 text-rose-200 border border-rose-400/40 font-extrabold uppercase tracking-wider text-[10px] sm:text-xs shrink-0">
           NHẮC NHỞ
         </span>
-        <p id="urgent-ticker-text" class="text-slate-300 truncate flex-1 font-medium">
+        <p id="urgent-ticker-text" class="text-rose-100 text-xs sm:text-sm md:text-[15px] font-semibold leading-snug line-clamp-2 flex-1">
           Ban Cán Sự lớp DA26KDA nhắc nhở: Sinh viên kiểm tra kỹ phòng thi và mang theo thẻ SV.
         </p>
       </div>
@@ -397,32 +399,40 @@
             <span class="text-[10px] font-semibold text-slate-400">Tổng (<span id="stat-percent" class="tabular-nums text-amber-300">0%</span>)</span>
           </div>
           <div class="flex items-center gap-2 mt-0.5">
-            <span id="stat-total" class="font-mono tabular-nums text-base sm:text-lg font-extrabold text-white leading-none">0</span>
+            <span id="stat-total" class="font-mono tabular-nums text-base sm:text-lg font-extrabold text-white leading-tight">0</span>
             <div class="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div id="stats-progress-bar" class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
+              <div id="stats-progress-bar" class="h-full rounded-full bg-emerald-400 transition-all duration-500" style="width: 0%;"></div>
             </div>
           </div>
         </button>
       </div>
 
-      <!-- 3. EVENT & NOTIFICATION QUEUE PANEL -->
+      <!-- 3. EVENT & DAILY SCHEDULE QUEUE PANEL -->
       <div class="flex-1 min-h-0 flex flex-col gap-1.5 overflow-hidden">
-        <div class="flex items-center justify-between gap-2 shrink-0 px-0.5">
-          <div class="flex items-center gap-1.5 min-w-0">
-            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-300 truncate">
-              HÀNG CHỜ SỰ KIỆN • THÔNG BÁO
-            </h2>
-            <span id="queue-filter-label" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-400/30 shrink-0">
-              Sắp tới
-            </span>
+        <div class="flex items-center justify-between gap-1.5 shrink-0 px-0.5">
+          <!-- Mode Switcher: Sự kiện vs Lịch học -->
+          <div class="flex items-center gap-1 bg-slate-900/85 p-0.5 rounded-xl border border-white/10 min-w-0">
+            <button id="tab-events-btn" type="button" class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide bg-sky-500/25 text-sky-200 border border-sky-400/35 transition shrink-0">
+              Sự kiện
+            </button>
+            <button id="tab-schedule-btn" type="button" class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-slate-400 hover:text-white border border-transparent transition shrink-0 flex items-center gap-1">
+              <span>Lịch học</span>
+              <span id="schedule-badge-count" class="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-500/25 text-indigo-300 font-mono">0</span>
+            </button>
           </div>
 
-          <button id="open-add-modal-btn" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-[11px] font-extrabold shadow-sm shadow-sky-500/25 transition shrink-0">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            <span>Thêm</span>
-          </button>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span id="queue-filter-label" class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-400/30">
+              Sắp tới
+            </span>
+
+            <button id="open-add-modal-btn" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-[11px] font-extrabold shadow-sm shadow-sky-500/25 transition shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              <span>Thêm</span>
+            </button>
+          </div>
         </div>
 
         <!-- Scrollable Queue List -->
@@ -471,9 +481,10 @@
           <!-- Category Tag -->
           <div>
             <label for="form-tag" class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">Phân loại (Tag) *</label>
-            <input id="form-tag" type="text" list="tag-suggestions" required placeholder="QUỐC PHÒNG, HỌC TẬP, ĐOÀN HỘI..." class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-white/10 focus:border-sky-400 focus:outline-none text-white uppercase" />
+            <input id="form-tag" type="text" list="tag-suggestions" required placeholder="QUỐC PHÒNG, LỊCH HỌC, ĐOÀN HỘI..." class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-white/10 focus:border-sky-400 focus:outline-none text-white uppercase" />
             <datalist id="tag-suggestions">
               <option value="QUỐC PHÒNG"></option>
+              <option value="LỊCH HỌC"></option>
               <option value="HỌC TẬP"></option>
               <option value="THI CỬ"></option>
               <option value="ĐOÀN HỘI"></option>
@@ -526,9 +537,10 @@
       'use strict';
 
       /* ----------------------------------------------------------------------
-         1. DEFAULT EVENTS & NOTIFICATIONS FOR CLASS DA26KDA (TRA VINH UNIV.)
+         1. DEFAULT EVENTS & DAILY CLASS SCHEDULE FOR DA26KDA (TVU)
          ---------------------------------------------------------------------- */
       const STORAGE_KEY = 'da26kda_standby_events_v1';
+      const SCHEDULE_STORAGE_KEY = 'da26kda_standby_schedule_v1';
 
       const DEFAULT_EVENTS = [
         {
@@ -605,7 +617,57 @@
         }
       ];
 
-      const URGENT_REMINDERS = [
+      /* Complete TVU Daily Class Schedule for Class DA26KDA (23/11/2026 – 10/01/2027) */
+      const DEFAULT_CLASS_SCHEDULE = [
+        // Tuần 23/11 - 29/11/2026
+        { id: 'cls-1123-1', datetime: '2026-11-23T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Mạch điện 1 (240104)', location: 'B31.304 - Dãy B31', tag: 'LỊCH HỌC', note: 'Nhóm 02 • GV: Cao Phương Thảo • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1125-1', datetime: '2026-11-25T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-1126-1', datetime: '2026-11-26T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Nhập môn ngành CNKT Điện (240143)', location: 'D61.202 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 01 • GV: Lê Thanh Tùng • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1127-1', datetime: '2026-11-27T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Pháp luật đại cương (450015)', location: 'B71.101 - Thư viện', tag: 'LỊCH HỌC', note: 'Nhóm 12 • GV: Dương Phan Thùy Dung • Giờ học: 07:00 - 10:40' },
+
+        // Tuần 30/11 - 06/12/2026
+        { id: 'cls-1130-1', datetime: '2026-11-30T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Mạch điện 1 (240104)', location: 'B31.304 - Dãy B31', tag: 'LỊCH HỌC', note: 'Nhóm 02 • GV: Cao Phương Thảo • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1201-1', datetime: '2026-12-01T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Toán cao cấp A1 (110004)', location: 'D61.204 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 06 • GV: Cao Hữu Hòa • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1202-1', datetime: '2026-12-02T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-1203-1', datetime: '2026-12-03T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Nhập môn ngành CNKT Điện (240143)', location: 'D61.202 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 01 • GV: Lê Thanh Tùng • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1204-1', datetime: '2026-12-04T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Pháp luật đại cương (450015)', location: 'B71.101 - Thư viện', tag: 'LỊCH HỌC', note: 'Nhóm 12 • GV: Dương Phan Thùy Dung • Giờ học: 07:00 - 10:40' },
+
+        // Tuần 07/12 - 13/12/2026
+        { id: 'cls-1207-1', datetime: '2026-12-07T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Mạch điện 1 (240104)', location: 'B31.304 - Dãy B31', tag: 'LỊCH HỌC', note: 'Nhóm 02 • GV: Cao Phương Thảo • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1208-1', datetime: '2026-12-08T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Toán cao cấp A1 (110004)', location: 'D61.204 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 06 • GV: Cao Hữu Hòa • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1209-1', datetime: '2026-12-09T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-1210-1', datetime: '2026-12-10T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Nhập môn ngành CNKT Điện (240143)', location: 'D61.202 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 01 • GV: Lê Thanh Tùng • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1211-2', datetime: '2026-12-11T13:00:00+07:00', endTime: '17:30', period: 'Tiết 6–10', title: 'Công nghệ số và ứng dụng (220292)', location: 'D71.112 - Phòng máy tính', tag: 'LỊCH HỌC', note: 'Nhóm 07 • GV: Lữ Minh Liềng • Giờ học chiều: 13:00 - 17:30' },
+
+        // Tuần 14/12 - 20/12/2026
+        { id: 'cls-1214-1', datetime: '2026-12-14T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Mạch điện 1 (240104)', location: 'B31.304 - Dãy B31', tag: 'LỊCH HỌC', note: 'Nhóm 02 • GV: Cao Phương Thảo • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1215-1', datetime: '2026-12-15T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Toán cao cấp A1 (110004)', location: 'D61.204 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 06 • GV: Cao Hữu Hòa • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1216-1', datetime: '2026-12-16T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-1217-1', datetime: '2026-12-17T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Nhập môn ngành CNKT Điện (240143)', location: 'D61.202 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 01 • GV: Lê Thanh Tùng • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1218-1', datetime: '2026-12-18T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Pháp luật đại cương (450015)', location: 'B71.101 - Thư viện', tag: 'LỊCH HỌC', note: 'Nhóm 12 • GV: Dương Phan Thùy Dung • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1218-2', datetime: '2026-12-18T13:00:00+07:00', endTime: '17:30', period: 'Tiết 6–10', title: 'Công nghệ số và ứng dụng (220292)', location: 'D71.114 - Phòng máy tính', tag: 'LỊCH HỌC', note: 'Nhóm 07 • GV: Lữ Minh Liềng • Giờ học chiều: 13:00 - 17:30' },
+
+        // Tuần 21/12 - 27/12/2026
+        { id: 'cls-1221-1', datetime: '2026-12-21T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Mạch điện 1 (240104)', location: 'B31.304 - Dãy B31', tag: 'LỊCH HỌC', note: 'Nhóm 02 • GV: Cao Phương Thảo • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1222-1', datetime: '2026-12-22T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Toán cao cấp A1 (110004)', location: 'D61.204 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 06 • GV: Cao Hữu Hòa • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1223-1', datetime: '2026-12-23T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-1224-1', datetime: '2026-12-24T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Nhập môn ngành CNKT Điện (240143)', location: 'D61.202 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 01 • GV: Lê Thanh Tùng • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1225-1', datetime: '2026-12-25T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Pháp luật đại cương (450015)', location: 'B71.101 - Thư viện', tag: 'LỊCH HỌC', note: 'Nhóm 12 • GV: Dương Phan Thùy Dung • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1225-2', datetime: '2026-12-25T13:00:00+07:00', endTime: '17:30', period: 'Tiết 6–10', title: 'Công nghệ số và ứng dụng (220292)', location: 'D71.114 - Phòng máy tính', tag: 'LỊCH HỌC', note: 'Nhóm 07 • GV: Lữ Minh Liềng • Giờ học chiều: 13:00 - 17:30' },
+
+        // Tuần 28/12/2026 - 03/01/2027
+        { id: 'cls-1229-1', datetime: '2026-12-29T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Toán cao cấp A1 (110004)', location: 'D61.204 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 06 • GV: Cao Hữu Hòa • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-1230-1', datetime: '2026-12-30T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-1230-2', datetime: '2026-12-30T13:00:00+07:00', endTime: '17:30', period: 'Tiết 6–10', title: 'Công nghệ số và ứng dụng (220292)', location: 'D71.113 - Phòng máy tính', tag: 'LỊCH HỌC', note: 'Nhóm 07 • GV: Lữ Minh Liềng • Giờ học chiều: 13:00 - 17:30' },
+
+        // Tuần 04/01 - 10/01/2027
+        { id: 'cls-0105-1', datetime: '2027-01-05T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Toán cao cấp A1 (110004)', location: 'D61.204 - Tòa nhà D61', tag: 'LỊCH HỌC', note: 'Nhóm 06 • GV: Cao Hữu Hòa • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-0106-1', datetime: '2027-01-06T07:00:00+07:00', endTime: '08:40', period: 'Tiết 1–2', title: 'Giáo dục thể chất 1 (Điền kinh)', location: 'STD28 - Sân thể dục', tag: 'LỊCH HỌC', note: 'Mã HP: 191.00 • Nhóm 15 • GV: Nguyễn Chí Sol • Giờ học: 07:00 - 08:40' },
+        { id: 'cls-0108-1', datetime: '2027-01-08T07:00:00+07:00', endTime: '10:40', period: 'Tiết 1–4', title: 'Pháp luật đại cương (450015)', location: 'B71.101 - Thư viện', tag: 'LỊCH HỌC', note: 'Nhóm 12 • GV: Dương Phan Thùy Dung • Giờ học: 07:00 - 10:40' },
+        { id: 'cls-0108-2', datetime: '2027-01-08T13:00:00+07:00', endTime: '17:30', period: 'Tiết 6–10', title: 'Công nghệ số và ứng dụng (220292)', location: 'D71.114 - Phòng máy tính', tag: 'LỊCH HỌC', note: 'Nhóm 07 • GV: Lữ Minh Liềng • Giờ học chiều: 13:00 - 17:30' }
+      ];
+
+      const BASE_URGENT_REMINDERS = [
         'Ban Cán Sự lớp DA26KDA nhắc nhở: Sinh viên luôn mang theo Thẻ Sinh Viên / CCCD khi đi thi.',
         'Đại hội Chi đoàn DA26KDA (25/11 • 18:00 tại B31.103): Yêu cầu mặc áo Thanh niên Việt Nam.',
         'Hạn chót đóng Đoàn phí & Kinh phí Công trình Thanh niên: 05/01/2027 qua VietQR lớp.'
@@ -615,6 +677,8 @@
          2. APPLICATION STATE
          ---------------------------------------------------------------------- */
       let events = loadEvents();
+      let classSchedule = loadSchedule();
+      let activeQueueTab = 'events'; // 'events' | 'schedule'
       let selectedEventId = null; // null = auto-follow nearest upcoming event
       let currentFilter = 'upcoming'; // 'upcoming' | 'past' | 'all'
       let tickerIndex = 0;
@@ -643,6 +707,22 @@
         } catch (err) {
           console.warn('Không thể lưu localStorage:', err);
         }
+      }
+
+      function loadSchedule() {
+        try {
+          const raw = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+          if (!raw) return [...DEFAULT_CLASS_SCHEDULE];
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (_) {}
+        return [...DEFAULT_CLASS_SCHEDULE];
+      }
+
+      function saveSchedule() {
+        try {
+          localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(classSchedule));
+        } catch (_) {}
       }
 
       /* ----------------------------------------------------------------------
@@ -681,6 +761,9 @@
         if (normalized.includes('QUỐC PHÒNG') || normalized.includes('GDQP')) {
           return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35';
         }
+        if (normalized.includes('LỊCH HỌC')) {
+          return 'bg-indigo-500/20 text-indigo-300 border-indigo-400/35';
+        }
         if (normalized.includes('THI') || normalized.includes('KIỂM TRA')) {
           return 'bg-rose-500/20 text-rose-300 border-rose-400/35';
         }
@@ -697,6 +780,7 @@
          6. VIETNAMESE DATE & COUNTDOWN FORMATTING HELPERS
          ---------------------------------------------------------------------- */
       const VN_WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const VN_WEEKDAYS_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
       function pad2(num) {
         return String(Math.floor(Math.abs(num))).padStart(2, '0');
@@ -705,11 +789,11 @@
       function formatVietnameseDateTime(dateObj) {
         const hh = pad2(dateObj.getHours());
         const mm = pad2(dateObj.getMinutes());
-        const dayName = VN_WEEKDAYS[dateObj.getDay()];
+        const dayShort = VN_WEEKDAYS_SHORT[dateObj.getDay()];
         const dd = pad2(dateObj.getDate());
         const mo = pad2(dateObj.getMonth() + 1);
         const yyyy = dateObj.getFullYear();
-        return `${hh}:${mm} • ${dayName}, ${dd}/${mo}/${yyyy}`;
+        return `${hh}:${mm} • ${dayShort}, ${dd}/${mo}/${yyyy}`;
       }
 
       function formatShortDateTime(dateObj) {
@@ -742,7 +826,8 @@
          7. SORTING & ACTIVE EVENT RESOLUTION
          ---------------------------------------------------------------------- */
       function getSortedEvents(nowMs) {
-        const withTime = events.map((ev) => ({
+        const activeCollection = activeQueueTab === 'schedule' ? classSchedule : events;
+        const withTime = activeCollection.map((ev) => ({
           ...ev,
           timestamp: new Date(ev.datetime).getTime()
         }));
@@ -759,8 +844,14 @@
       }
 
       function resolveFeaturedEvent(sortedData) {
+        // Allow inspecting any selected event OR class item
+        const combinedPool = [...events, ...classSchedule].map((ev) => ({
+          ...ev,
+          timestamp: new Date(ev.datetime).getTime()
+        }));
+
         if (selectedEventId) {
-          const found = [...sortedData.upcoming, ...sortedData.past].find((e) => e.id === selectedEventId);
+          const found = combinedPool.find((e) => e.id === selectedEventId);
           if (found) {
             return { event: found, isManualSelection: true };
           }
@@ -919,6 +1010,20 @@
           }
         });
 
+        // Update Tab buttons (Sự kiện vs Lịch học)
+        const tabEventsBtn = document.getElementById('tab-events-btn');
+        const tabScheduleBtn = document.getElementById('tab-schedule-btn');
+        const upcomingClassCount = classSchedule.filter((c) => new Date(c.datetime).getTime() > nowMs).length;
+        document.getElementById('schedule-badge-count').textContent = upcomingClassCount;
+
+        if (activeQueueTab === 'events') {
+          tabEventsBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide bg-sky-500/25 text-sky-200 border border-sky-400/35 transition shrink-0';
+          tabScheduleBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-slate-400 hover:text-white border border-transparent transition shrink-0 flex items-center gap-1';
+        } else {
+          tabEventsBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-slate-400 hover:text-white border border-transparent transition shrink-0';
+          tabScheduleBtn.className = 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide bg-indigo-500/25 text-indigo-200 border border-indigo-400/35 transition shrink-0 flex items-center gap-1';
+        }
+
         const filterLabels = {
           upcoming: 'Sắp tới',
           past: 'Đã qua',
@@ -975,14 +1080,14 @@
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1.5 mb-0.5">
                   <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider border ${getTagClasses(ev.tag)} shrink-0">
-                    ${escapeHtml(ev.tag)}
+                    ${escapeHtml(ev.period ? ev.period : ev.tag)}
                   </span>
                   <h4 class="text-xs font-bold text-white truncate">
                     ${escapeHtml(ev.title)}
                   </h4>
                 </div>
                 <div class="flex items-center gap-2 text-[10px] text-slate-400 truncate">
-                  <span class="font-mono tabular-nums text-slate-300 shrink-0">${formatShortDateTime(new Date(ev.timestamp))}</span>
+                  <span class="font-mono tabular-nums text-slate-300 shrink-0">${formatShortDateTime(new Date(ev.timestamp))}${ev.endTime ? '–' + ev.endTime : ''}</span>
                   <span>•</span>
                   <span class="truncate">${escapeHtml(ev.location)}</span>
                 </div>
@@ -1177,9 +1282,9 @@
         deleteBtn.textContent = 'Xóa sự kiện này';
 
         if (eventId) {
-          const ev = events.find((item) => item.id === eventId);
+          const ev = events.find((item) => item.id === eventId) || classSchedule.find((item) => item.id === eventId);
           if (!ev) return;
-          titleHeading.textContent = 'Chỉnh Sửa Sự Kiện / Thông Báo';
+          titleHeading.textContent = 'Chỉnh Sửa Sự Kiện / Lịch Học';
           idInput.value = ev.id;
           titleInput.value = ev.title;
           dtInput.value = toLocalDatetimeInputValue(ev.datetime);
@@ -1188,11 +1293,11 @@
           noteInput.value = ev.note || '';
           deleteBtn.classList.remove('hidden');
         } else {
-          titleHeading.textContent = 'Thêm Sự Kiện / Thông Báo Mới';
+          titleHeading.textContent = activeQueueTab === 'schedule' ? 'Thêm Buổi Học Mới' : 'Thêm Sự Kiện / Thông Báo Mới';
           idInput.value = '';
           titleInput.value = '';
           dtInput.value = toLocalDatetimeInputValue(null);
-          tagInput.value = 'THÔNG BÁO';
+          tagInput.value = activeQueueTab === 'schedule' ? 'LỊCH HỌC' : 'THÔNG BÁO';
           locInput.value = 'Trường Đại học Trà Vinh';
           noteInput.value = '';
           deleteBtn.classList.add('hidden');
@@ -1209,13 +1314,32 @@
       }
 
       /* ----------------------------------------------------------------------
-         13. URGENT REMINDER TICKER ROTATION
+         13. URGENT REMINDER TICKER ROTATION (EVENTS + UPCOMING DAILY CLASSES)
          ---------------------------------------------------------------------- */
+      function buildDynamicReminders() {
+        const nowMs = Date.now();
+        const nextClasses = classSchedule
+          .map((c) => ({ ...c, timestamp: new Date(c.datetime).getTime() }))
+          .filter((c) => c.timestamp > nowMs)
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .slice(0, 2);
+
+        const classReminders = nextClasses.map((cls) => {
+          const d = new Date(cls.timestamp);
+          const dayShort = VN_WEEKDAYS_SHORT[d.getDay()];
+          const dateStr = `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`;
+          return `Lịch học ${dayShort} (${dateStr}) • ${cls.period || '07:00'}: ${cls.title} tại ${cls.location}.`;
+        });
+
+        return [...BASE_URGENT_REMINDERS, ...classReminders];
+      }
+
       function rotateUrgentTicker() {
         const el = document.getElementById('urgent-ticker-text');
         if (!el) return;
-        tickerIndex = (tickerIndex + 1) % URGENT_REMINDERS.length;
-        el.textContent = URGENT_REMINDERS[tickerIndex];
+        const list = buildDynamicReminders();
+        tickerIndex = (tickerIndex + 1) % list.length;
+        el.textContent = list[tickerIndex];
       }
 
       /* ----------------------------------------------------------------------
@@ -1241,7 +1365,19 @@
         document.getElementById('back-to-nearest-btn').addEventListener('click', () => {
           selectedEventId = null;
           tickDashboard();
-          showToast('Đã quay về sự kiện sắp diễn ra gần nhất', 'info');
+          showToast('Đã quay về mục sắp diễn ra gần nhất', 'info');
+        });
+
+        // Queue Tab Switchers (Sự kiện vs Lịch học)
+        document.getElementById('tab-events-btn').addEventListener('click', () => {
+          activeQueueTab = 'events';
+          selectedEventId = null;
+          tickDashboard();
+        });
+        document.getElementById('tab-schedule-btn').addEventListener('click', () => {
+          activeQueueTab = 'schedule';
+          selectedEventId = null;
+          tickDashboard();
         });
 
         // Weather refresh on click
@@ -1299,26 +1435,42 @@
           const isoDatetime = new Date(dtVal).toISOString();
 
           if (id) {
-            events = events.map((ev) =>
-              ev.id === id ? { ...ev, title, datetime: isoDatetime, tag, location, note } : ev
-            );
+            if (events.some((ev) => ev.id === id)) {
+              events = events.map((ev) =>
+                ev.id === id ? { ...ev, title, datetime: isoDatetime, tag, location, note } : ev
+              );
+              saveEvents();
+            } else {
+              classSchedule = classSchedule.map((ev) =>
+                ev.id === id ? { ...ev, title, datetime: isoDatetime, tag, location, note } : ev
+              );
+              saveSchedule();
+            }
             selectedEventId = id;
-            showToast('Đã cập nhật sự kiện thành công', 'success');
+            showToast('Đã cập nhật thành công', 'success');
           } else {
-            const newId = 'da26kda-' + Date.now();
-            events.push({
+            const newId = (tag === 'LỊCH HỌC' ? 'cls-' : 'da26kda-') + Date.now();
+            const newItem = {
               id: newId,
               title,
               datetime: isoDatetime,
               tag,
               location,
               note
-            });
+            };
+            if (tag === 'LỊCH HỌC' || activeQueueTab === 'schedule') {
+              classSchedule.push(newItem);
+              activeQueueTab = 'schedule';
+              saveSchedule();
+            } else {
+              events.push(newItem);
+              activeQueueTab = 'events';
+              saveEvents();
+            }
             selectedEventId = newId;
-            showToast('Đã thêm thông báo mới vào hàng chờ', 'success');
+            showToast('Đã thêm mới vào hàng chờ', 'success');
           }
 
-          saveEvents();
           closeEventModal();
           tickDashboard();
         });
@@ -1336,14 +1488,16 @@
           }
 
           events = events.filter((ev) => ev.id !== id);
+          classSchedule = classSchedule.filter((ev) => ev.id !== id);
           if (selectedEventId === id) selectedEventId = null;
           saveEvents();
+          saveSchedule();
           closeEventModal();
           tickDashboard();
-          showToast('Đã xóa sự kiện khỏi danh sách', 'info');
+          showToast('Đã xóa khỏi danh sách', 'info');
         });
 
-        // Reset Default DA26KDA Events (2-step inline confirmation)
+        // Reset Default DA26KDA Events & Schedule (2-step inline confirmation)
         document.getElementById('reset-defaults-btn').addEventListener('click', (e) => {
           const btn = e.currentTarget;
           if (!confirmResetArmed) {
@@ -1353,11 +1507,13 @@
           }
 
           events = [...DEFAULT_EVENTS];
+          classSchedule = [...DEFAULT_CLASS_SCHEDULE];
           selectedEventId = null;
           saveEvents();
+          saveSchedule();
           closeEventModal();
           tickDashboard();
-          showToast('Đã khôi phục 9 sự kiện mặc định lớp DA26KDA', 'success');
+          showToast('Đã khôi phục toàn bộ sự kiện & lịch học DA26KDA', 'success');
         });
 
         // Re-acquire Wake Lock automatically if tab becomes visible again
@@ -1376,6 +1532,22 @@
         setInterval(tickDashboard, 1000);
         setInterval(rotateUrgentTicker, 8000);
         setInterval(() => fetchTraVinhWeather(false), 15 * 60 * 1000);
+
+        // Auto-refresh page every 12 hours (43,200,000 ms) for long-term StandBy stability
+        const AUTO_REFRESH_12H_MS = 12 * 60 * 60 * 1000;
+        function scheduleAutoRefresh() {
+          setTimeout(() => {
+            const modal = document.getElementById('event-modal');
+            const isModalOpen = modal && !modal.classList.contains('hidden');
+            if (isModalOpen) {
+              // Defer reload by 1 minute if user is currently editing an event
+              setTimeout(() => window.location.reload(), 60 * 1000);
+            } else {
+              window.location.reload();
+            }
+          }, AUTO_REFRESH_12H_MS);
+        }
+        scheduleAutoRefresh();
       }
 
       window.addEventListener('DOMContentLoaded', initDashboard);
