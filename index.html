@@ -89,6 +89,25 @@
         inset 0 1px 0 0 rgba(255, 255, 255, 0.09);
     }
 
+    /* Urgent glow when next class/event is within 12 hours */
+    .standby-panel.urgent-soon {
+      border-color: rgba(251, 191, 36, 0.38);
+      box-shadow:
+        0 18px 40px -12px rgba(0, 0, 0, 0.75),
+        0 0 28px -8px rgba(245, 158, 11, 0.25),
+        inset 0 1px 0 0 rgba(251, 191, 36, 0.14);
+    }
+
+    /* Automatic Night StandBy Dimming (22:30 - 05:30) for desk/bedside comfort */
+    body.night-standby main {
+      filter: brightness(0.72) contrast(1.06);
+    }
+
+    /* Smooth OLED anti-burn-in micro-shift */
+    #standby-main-grid {
+      transition: transform 1.8s ease-in-out, filter 1s ease;
+    }
+
     /* Custom ultra-thin sleek scrollbar for internal lists */
     .custom-scroll::-webkit-scrollbar {
       width: 4px;
@@ -177,12 +196,12 @@
   <!-- ========================================================================
        MAIN 2-COLUMN LANDSCAPE DASHBOARD CONTAINER (100dvh x 100vw)
        ======================================================================== -->
-  <main class="relative z-10 w-[100vw] h-[100dvh] p-2 sm:p-3 flex flex-col md:flex-row landscape:flex-row gap-2 sm:gap-3 overflow-hidden">
+  <main id="standby-main-grid" class="relative z-10 w-[100vw] h-[100dvh] p-2 sm:p-3 flex flex-col md:flex-row landscape:flex-row gap-2 sm:gap-3 overflow-hidden">
 
     <!-- ======================================================================
          LEFT COLUMN (~54% WIDTH): HERO COUNTDOWN & IMPORTANT EVENT DETAILS
          ====================================================================== -->
-    <section class="standby-panel rounded-2xl w-full md:w-[54%] landscape:w-[54%] h-[52%] md:h-full landscape:h-full p-2.5 sm:p-3.5 flex flex-col justify-between gap-2 min-h-0 overflow-hidden">
+    <section id="left-panel" class="standby-panel rounded-2xl w-full md:w-[54%] landscape:w-[54%] h-[52%] md:h-full landscape:h-full p-2.5 sm:p-3.5 flex flex-col justify-between gap-2 min-h-0 overflow-hidden transition-all duration-500">
 
       <!-- 1. TOP HEADER BAR -->
       <header class="flex items-center justify-between gap-2 shrink-0">
@@ -407,7 +426,7 @@
         </button>
       </div>
 
-      <!-- 3. UNIFIED EVENT & DAILY SCHEDULE QUEUE PANEL (HANDS-FREE) -->
+      <!-- 3. UNIFIED EVENT & DAILY SCHEDULE QUEUE PANEL (HANDS-FREE, STATIC & CRISP) -->
       <div class="flex-1 min-h-0 flex flex-col gap-1.5 overflow-hidden">
         <div class="flex items-center justify-between gap-1.5 shrink-0 px-0.5">
           <div class="flex items-center gap-1.5 min-w-0">
@@ -419,7 +438,7 @@
 
           <div class="flex items-center gap-1.5 shrink-0">
             <span id="queue-filter-label" class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-400/30">
-              Sắp tới
+              Cố định • Tự ẩn hết hạn
             </span>
 
             <button id="open-add-modal-btn" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-[11px] font-extrabold shadow-sm shadow-sky-500/25 transition shrink-0">
@@ -431,7 +450,7 @@
           </div>
         </div>
 
-        <!-- Scrollable Queue List -->
+        <!-- Queue List -->
         <div id="event-queue-list" class="flex-1 min-h-0 overflow-y-auto custom-scroll flex flex-col gap-1.5 pr-0.5">
           <!-- Populated dynamically by JS -->
         </div>
@@ -664,9 +683,18 @@
       ];
 
       const BASE_URGENT_REMINDERS = [
-        'Ban Cán Sự lớp DA26KDA nhắc nhở: Sinh viên luôn mang theo Thẻ Sinh Viên / CCCD khi đi thi.',
-        'Đại hội Chi đoàn DA26KDA (25/11 • 18:00 tại B31.103): Yêu cầu mặc áo Thanh niên Việt Nam.',
-        'Hạn chót đóng Đoàn phí & Kinh phí Công trình Thanh niên: 05/01/2027 qua VietQR lớp.'
+        {
+          text: 'Ban Cán Sự lớp DA26KDA nhắc nhở: Sinh viên luôn mang theo Thẻ Sinh Viên / CCCD khi đi thi.',
+          expiresAt: null
+        },
+        {
+          text: 'Đại hội Chi đoàn DA26KDA (25/11 • 18:00 tại B31.103): Yêu cầu mặc áo Thanh niên Việt Nam.',
+          expiresAt: '2026-11-25T20:00:00+07:00'
+        },
+        {
+          text: 'Hạn chót đóng Đoàn phí & Kinh phí Công trình Thanh niên: 05/01/2027 qua VietQR lớp.',
+          expiresAt: '2027-01-06T00:00:00+07:00'
+        }
       ];
 
       /* ----------------------------------------------------------------------
@@ -675,179 +703,183 @@
       let events = loadEvents();
       let classSchedule = loadSchedule();
       let selectedEventId = null; // null = auto-follow nearest upcoming event or class
+      let selectedWasUpcoming = false; // Auto-release selection once an upcoming item expires
       let currentFilter = 'upcoming'; // 'upcoming' | 'past' | 'all'
-      let tickerIndex = 0;
       let wakeLockSentinel = null;
-      let confirmResetArmed = false;
-      let confirmDeleteArmed = false;
-      let autoScrollDirection = 1;
-      let autoScrollPausedUntil = 0;
+      let lastTickSecond = -1;
+      let tickerIndex = 0;
+
+      const VN_WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const VN_WEEKDAYS_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
       /* ----------------------------------------------------------------------
-         3. LOCALSTORAGE HELPERS
+         3. STORAGE HELPERS (SAFE LOCALSTORAGE WITH FALLBACK)
          ---------------------------------------------------------------------- */
       function loadEvents() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) return [...DEFAULT_EVENTS];
+          if (!raw) return DEFAULT_EVENTS.map((e) => ({ ...e }));
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         } catch (err) {
-          console.warn('Không thể đọc localStorage, dùng dữ liệu mặc định:', err);
+          console.warn('Không thể đọc dữ liệu sự kiện từ localStorage:', err);
         }
-        return [...DEFAULT_EVENTS];
+        return DEFAULT_EVENTS.map((e) => ({ ...e }));
       }
 
       function saveEvents() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
         } catch (err) {
-          console.warn('Không thể lưu localStorage:', err);
+          console.warn('Không thể lưu dữ liệu sự kiện:', err);
         }
       }
 
       function loadSchedule() {
         try {
           const raw = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-          if (!raw) return [...DEFAULT_CLASS_SCHEDULE];
+          if (!raw) return DEFAULT_CLASS_SCHEDULE.map((c) => ({ ...c }));
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        } catch (_) {}
-        return [...DEFAULT_CLASS_SCHEDULE];
+        } catch (err) {
+          console.warn('Không thể đọc lịch học từ localStorage:', err);
+        }
+        return DEFAULT_CLASS_SCHEDULE.map((c) => ({ ...c }));
       }
 
       function saveSchedule() {
         try {
           localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(classSchedule));
-        } catch (_) {}
+        } catch (err) {
+          console.warn('Không thể lưu lịch học:', err);
+        }
       }
 
       /* ----------------------------------------------------------------------
-         4. TOAST NOTIFICATION SYSTEM (NO ALERT/CONFIRM)
+         4. DATE, TIME & FORMATTING UTILITIES
          ---------------------------------------------------------------------- */
-      function showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-
-        const colors = {
-          info: 'bg-slate-900/95 border-sky-400/40 text-sky-200',
-          success: 'bg-slate-900/95 border-emerald-400/40 text-emerald-200',
-          warn: 'bg-slate-900/95 border-amber-400/40 text-amber-200'
-        };
-
-        const toast = document.createElement('div');
-        toast.className = `px-3.5 py-2 rounded-xl border backdrop-blur-xl shadow-xl text-xs font-semibold transition-all duration-300 opacity-0 -translate-y-2 ${colors[type] || colors.info}`;
-        toast.textContent = message;
-        container.appendChild(toast);
-
-        requestAnimationFrame(() => {
-          toast.classList.remove('opacity-0', '-translate-y-2');
-        });
-
-        setTimeout(() => {
-          toast.classList.add('opacity-0', '-translate-y-2');
-          setTimeout(() => toast.remove(), 300);
-        }, 2800);
-      }
-
-      /* ----------------------------------------------------------------------
-         5. TAG COLOR STYLING HELPER
-         ---------------------------------------------------------------------- */
-      function getTagClasses(tag) {
-        const normalized = (tag || '').toUpperCase().trim();
-        if (normalized.includes('QUỐC PHÒNG') || normalized.includes('GDQP')) {
-          return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35';
-        }
-        if (normalized.includes('LỊCH HỌC')) {
-          return 'bg-indigo-500/20 text-indigo-300 border-indigo-400/35';
-        }
-        if (normalized.includes('THI') || normalized.includes('KIỂM TRA')) {
-          return 'bg-rose-500/20 text-rose-300 border-rose-400/35';
-        }
-        if (normalized.includes('ĐOÀN')) {
-          return 'bg-sky-500/20 text-sky-300 border-sky-400/35';
-        }
-        if (normalized.includes('HỌC TẬP')) {
-          return 'bg-amber-500/20 text-amber-300 border-amber-400/35';
-        }
-        return 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35';
-      }
-
-      /* ----------------------------------------------------------------------
-         6. VIETNAMESE DATE & COUNTDOWN FORMATTING HELPERS
-         ---------------------------------------------------------------------- */
-      const VN_WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-      const VN_WEEKDAYS_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-
       function pad2(num) {
-        return String(Math.floor(Math.abs(num))).padStart(2, '0');
+        return String(Math.max(0, Math.floor(num))).padStart(2, '0');
       }
 
-      function formatVietnameseDateTime(dateObj) {
-        const hh = pad2(dateObj.getHours());
-        const mm = pad2(dateObj.getMinutes());
-        const dayShort = VN_WEEKDAYS_SHORT[dateObj.getDay()];
-        const dd = pad2(dateObj.getDate());
-        const mo = pad2(dateObj.getMonth() + 1);
-        const yyyy = dateObj.getFullYear();
-        return `${hh}:${mm} • ${dayShort}, ${dd}/${mo}/${yyyy}`;
+      function formatVietnameseDate(dateObj) {
+        const dayName = VN_WEEKDAYS[dateObj.getDay()];
+        return `${dayName}, ${pad2(dateObj.getDate())}/${pad2(dateObj.getMonth() + 1)}/${dateObj.getFullYear()}`;
       }
 
-      function formatShortDateTime(dateObj) {
-        const hh = pad2(dateObj.getHours());
-        const mm = pad2(dateObj.getMinutes());
-        const dd = pad2(dateObj.getDate());
-        const mo = pad2(dateObj.getMonth() + 1);
-        const yyyy = dateObj.getFullYear();
-        return `${hh}:${mm} • ${dd}/${mo}/${yyyy}`;
+      function formatEventDateTime(isoString, endTime) {
+        const d = new Date(isoString);
+        if (Number.isNaN(d.getTime())) return isoString;
+        const hhmm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        const timeRange = endTime ? `${hhmm}–${endTime}` : hhmm;
+        const dayShort = VN_WEEKDAYS_SHORT[d.getDay()];
+        return `${timeRange} • ${dayShort}, ${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
       }
 
-      function formatMiniCountdown(diffMs) {
-        if (diffMs <= 0) return 'Đã qua';
-        const totalMinutes = Math.floor(diffMs / 60000);
-        const days = Math.floor(totalMinutes / 1440);
-        const hours = Math.floor((totalMinutes % 1440) / 60);
-        const mins = totalMinutes % 60;
+      function toDateTimeLocalValue(isoString) {
+        const d = new Date(isoString);
+        if (Number.isNaN(d.getTime())) return '';
+        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      }
 
-        if (days > 0) {
-          return `Còn ${days}n ${hours}g`;
+      function formatRelativeCountdown(diffMs) {
+        if (diffMs <= 0) {
+          const pastMs = Math.abs(diffMs);
+          const pastDays = Math.floor(pastMs / 86400000);
+          if (pastDays >= 1) return `Đã qua ${pastDays} ngày`;
+          const pastHours = Math.floor(pastMs / 3600000);
+          if (pastHours >= 1) return `Đã qua ${pastHours} giờ`;
+          return 'Vừa diễn ra';
         }
-        if (hours > 0) {
-          return `Còn ${hours}g ${mins}p`;
-        }
-        const secs = Math.floor((diffMs % 60000) / 1000);
-        return `Còn ${mins}p ${secs}s`;
+
+        const totalSec = Math.floor(diffMs / 1000);
+        const days = Math.floor(totalSec / 86400);
+        const hours = Math.floor((totalSec % 86400) / 3600);
+        const mins = Math.floor((totalSec % 3600) / 60);
+
+        if (days > 1) return `Còn ${days} ngày ${hours}g`;
+        if (days === 1) return `Ngày mai (${hours}g ${mins}p)`;
+        if (hours >= 1) return `Còn ${hours} giờ ${mins} phút`;
+        return `Sắp bắt đầu (${mins} phút)`;
+      }
+
+      function getTagBadgeClasses(tag) {
+        const t = (tag || '').toUpperCase();
+        if (t.includes('QUỐC PHÒNG')) return 'bg-sky-500/20 text-sky-300 border-sky-400/30';
+        if (t.includes('LỊCH HỌC')) return 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30';
+        if (t.includes('THI')) return 'bg-rose-500/20 text-rose-300 border-rose-400/30';
+        if (t.includes('HỌC TẬP')) return 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30';
+        if (t.includes('ĐOÀN')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
+        return 'bg-amber-500/20 text-amber-300 border-amber-400/30';
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function getDayContextLabel(timestampMs) {
+        const now = new Date();
+        const target = new Date(timestampMs);
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+        const diffDays = Math.round((startOfTarget - startOfToday) / 86400000);
+        if (diffDays === 0) return 'HÔM NAY';
+        if (diffDays === 1) return 'NGÀY MAI';
+        return null;
       }
 
       /* ----------------------------------------------------------------------
-         7. SORTING & ACTIVE EVENT RESOLUTION (UNIFIED EVENTS + CLASS SCHEDULE)
+         5. UNIFIED EVENT & SCHEDULE SORTING + FEATURED SELECTION
          ---------------------------------------------------------------------- */
-      function getSortedEvents(nowMs) {
-        const unifiedCollection = [...events, ...classSchedule];
-        const withTime = unifiedCollection.map((ev) => ({
-          ...ev,
-          timestamp: new Date(ev.datetime).getTime()
-        }));
+      function getSortedEventGroups() {
+        const now = Date.now();
+        const combined = [
+          ...events.map((ev) => ({
+            ...ev,
+            sourceType: 'event',
+            timestamp: new Date(ev.datetime).getTime()
+          })),
+          ...classSchedule.map((cls) => ({
+            ...cls,
+            sourceType: 'schedule',
+            timestamp: new Date(cls.datetime).getTime()
+          }))
+        ].filter((item) => !Number.isNaN(item.timestamp));
 
-        const upcoming = withTime
-          .filter((ev) => ev.timestamp > nowMs)
+        const upcoming = combined
+          .filter((item) => item.timestamp > now)
           .sort((a, b) => a.timestamp - b.timestamp);
 
-        const past = withTime
-          .filter((ev) => ev.timestamp <= nowMs)
-          .sort((a, b) => b.timestamp - a.timestamp); // Most recently passed first
+        const past = combined
+          .filter((item) => item.timestamp <= now)
+          .sort((a, b) => b.timestamp - a.timestamp);
 
-        return { upcoming, past, allChronological: [...withTime].sort((a, b) => a.timestamp - b.timestamp) };
+        return { all: combined, upcoming, past };
       }
 
       function resolveFeaturedEvent(sortedData) {
-        const combinedPool = [...sortedData.upcoming, ...sortedData.past];
+        const now = Date.now();
 
         if (selectedEventId) {
-          const found = combinedPool.find((e) => e.id === selectedEventId);
+          const found = sortedData.all.find((item) => item.id === selectedEventId);
           if (found) {
-            return { event: found, isManualSelection: true };
+            // Auto-release manual selection if an upcoming item just expired
+            if (selectedWasUpcoming && found.timestamp <= now) {
+              selectedEventId = null;
+              selectedWasUpcoming = false;
+              lastTickSecond = -1;
+            } else {
+              return { event: found, isManualSelection: true };
+            }
+          } else {
+            selectedEventId = null;
+            selectedWasUpcoming = false;
           }
-          selectedEventId = null;
         }
 
         if (sortedData.upcoming.length > 0) {
@@ -858,493 +890,571 @@
           return { event: sortedData.past[0], isManualSelection: false };
         }
 
-        return { event: null, isManualSelection: false };
+        return null;
       }
 
       /* ----------------------------------------------------------------------
-         8. RENDER LEFT PANEL (COUNTDOWN + IMPORTANT INFO)
+         6. LEFT PANEL & RIGHT PANEL RENDERING
          ---------------------------------------------------------------------- */
-      function renderLeftPanel(nowMs, sortedData) {
-        const { event, isManualSelection } = resolveFeaturedEvent(sortedData);
-
+      function renderLeftPanel(featuredInfo) {
+        const titleEl = document.getElementById('left-event-title');
+        const dtEl = document.getElementById('left-event-datetime');
+        const locEl = document.getElementById('left-event-location');
+        const noteEl = document.getElementById('left-event-note');
+        const tagEl = document.getElementById('left-event-tag');
         const modeBadge = document.getElementById('left-mode-badge');
         const modeText = document.getElementById('left-mode-text');
         const backBtn = document.getElementById('back-to-nearest-btn');
-        const tagEl = document.getElementById('left-event-tag');
 
         const daysEl = document.getElementById('cd-days');
         const hoursEl = document.getElementById('cd-hours');
         const minsEl = document.getElementById('cd-minutes');
         const secsEl = document.getElementById('cd-seconds');
-        const progressFill = document.getElementById('cd-progress-fill');
-        const relativeLabel = document.getElementById('cd-relative-label');
+        const progFillEl = document.getElementById('cd-progress-fill');
+        const relLabelEl = document.getElementById('cd-relative-label');
+        const leftPanelEl = document.getElementById('left-panel');
 
-        const titleEl = document.getElementById('left-event-title');
-        const dtEl = document.getElementById('left-event-datetime');
-        const locEl = document.getElementById('left-event-location');
-        const noteEl = document.getElementById('left-event-note');
-
-        if (!event) {
+        if (!featuredInfo || !featuredInfo.event) {
+          if (leftPanelEl) leftPanelEl.classList.remove('urgent-soon');
           titleEl.textContent = 'Chưa có sự kiện nào trong danh sách';
           dtEl.textContent = '--:--';
-          locEl.textContent = 'Lớp DA26KDA — ĐH Trà Vinh';
-          noteEl.textContent = 'Nhấn nút "+ Thêm" ở khung bên phải để thêm lịch thi hoặc thông báo mới.';
+          locEl.textContent = 'Đại học Trà Vinh';
+          noteEl.textContent = 'Bấm nút "+ Thêm" ở cột bên phải để tạo thông báo mới.';
           daysEl.textContent = '00';
           hoursEl.textContent = '00';
           minsEl.textContent = '00';
           secsEl.textContent = '00';
-          progressFill.style.width = '0%';
-          relativeLabel.textContent = 'Trống';
-          backBtn.classList.add('hidden');
+          progFillEl.style.width = '0%';
+          relLabelEl.textContent = 'Trống';
           return;
         }
 
-        const diffMs = event.timestamp - nowMs;
-        const isPast = diffMs <= 0;
+        const ev = featuredInfo.event;
+        const now = Date.now();
+        const diffMs = ev.timestamp - now;
+        const isUpcoming = diffMs > 0;
+        const isUrgentSoon = isUpcoming && diffMs <= 12 * 3600000;
 
-        // Top status badge & "Gần nhất" button
-        if (isPast) {
-          modeBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-500/20 border border-slate-400/30 text-slate-300 text-[10px] font-semibold truncate';
-          modeText.textContent = 'SỰ KIỆN ĐÃ DIỄN RA';
-        } else if (isManualSelection) {
-          modeBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[10px] font-semibold truncate';
-          modeText.textContent = 'ĐANG XEM CHI TIẾT';
-        } else {
-          modeBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-[10px] font-semibold truncate';
-          modeText.textContent = 'SẮP DIỄN RA GẦN NHẤT';
+        if (leftPanelEl) {
+          leftPanelEl.classList.toggle('urgent-soon', isUrgentSoon);
         }
 
-        if (isManualSelection) {
+        // Mode indicator & back button
+        if (featuredInfo.isManualSelection) {
+          modeBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[10px] font-semibold truncate';
+          modeText.textContent = isUpcoming ? 'ĐANG XEM CHI TIẾT' : 'MỤC ĐÃ DIỄN RA';
           backBtn.classList.remove('hidden');
           backBtn.classList.add('inline-flex');
         } else {
+          const dayCtx = getDayContextLabel(ev.timestamp);
+          if (isUrgentSoon) {
+            modeBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 text-[10px] font-bold truncate';
+            modeText.textContent = dayCtx === 'HÔM NAY' ? 'SẮP DIỄN RA HÔM NAY' : 'CHUẨN BỊ SÁNG MAI';
+          } else {
+            modeBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-[10px] font-semibold truncate';
+            modeText.textContent = isUpcoming
+              ? (ev.sourceType === 'schedule' ? 'BUỔI HỌC KẾ TIẾP' : 'SỰ KIỆN GẦN NHẤT')
+              : 'TẤT CẢ ĐÃ HOÀN THÀNH';
+          }
           backBtn.classList.add('hidden');
           backBtn.classList.remove('inline-flex');
         }
 
-        // Tag
-        tagEl.textContent = event.tag || 'THÔNG BÁO';
-        tagEl.className = `px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase border shrink-0 ${getTagClasses(event.tag)}`;
+        // Tag, Title, DateTime, Location, Note
+        const displayTag = ev.period ? `${ev.tag} • ${ev.period}` : ev.tag;
+        tagEl.textContent = displayTag;
+        tagEl.className = `px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase border shrink-0 ${getTagBadgeClasses(ev.tag)}`;
 
-        // Countdown numbers
-        if (isPast) {
+        titleEl.textContent = ev.title;
+        dtEl.textContent = formatEventDateTime(ev.datetime, ev.endTime);
+        locEl.textContent = ev.location;
+        noteEl.textContent = ev.note || 'Không có ghi chú bổ sung.';
+
+        // Countdown Digits & Progress
+        if (isUpcoming) {
+          const totalSec = Math.floor(diffMs / 1000);
+          const d = Math.floor(totalSec / 86400);
+          const h = Math.floor((totalSec % 86400) / 3600);
+          const m = Math.floor((totalSec % 3600) / 60);
+          const s = totalSec % 60;
+
+          daysEl.textContent = pad2(d);
+          hoursEl.textContent = pad2(h);
+          minsEl.textContent = pad2(m);
+          secsEl.textContent = pad2(s);
+
+          // Linear progress over a 7-day rolling window
+          const windowMs = 7 * 86400000;
+          const pct = Math.min(99, Math.max(6, Math.round(((windowMs - Math.min(diffMs, windowMs)) / windowMs) * 100)));
+          progFillEl.style.width = `${pct}%`;
+          relLabelEl.textContent = formatRelativeCountdown(diffMs);
+        } else {
           daysEl.textContent = '00';
           hoursEl.textContent = '00';
           minsEl.textContent = '00';
           secsEl.textContent = '00';
-          progressFill.style.width = '100%';
-          progressFill.className = 'h-full rounded-full bg-emerald-400 transition-all duration-500';
-          relativeLabel.textContent = 'Đã hoàn thành';
-          relativeLabel.className = 'font-mono tabular-nums text-[10px] sm:text-[11px] font-semibold text-emerald-300 shrink-0';
-        } else {
-          const totalSeconds = Math.floor(diffMs / 1000);
-          const days = Math.floor(totalSeconds / 86400);
-          const hours = Math.floor((totalSeconds % 86400) / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
-
-          daysEl.textContent = pad2(days);
-          hoursEl.textContent = pad2(hours);
-          minsEl.textContent = pad2(minutes);
-          secsEl.textContent = pad2(seconds);
-
-          // Visual urgency progress bar (relative to a 7-day window)
-          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-          const pct = Math.max(6, Math.min(98, Math.round(((sevenDaysMs - Math.min(diffMs, sevenDaysMs)) / sevenDaysMs) * 100)));
-          progressFill.style.width = `${pct}%`;
-          progressFill.className = 'h-full rounded-full bg-gradient-to-r from-sky-400 via-cyan-300 to-amber-300 transition-all duration-500';
-
-          relativeLabel.textContent = formatMiniCountdown(diffMs);
-          relativeLabel.className = 'font-mono tabular-nums text-[10px] sm:text-[11px] font-semibold text-sky-300 shrink-0';
+          progFillEl.style.width = '100%';
+          relLabelEl.textContent = formatRelativeCountdown(diffMs);
         }
-
-        // Important Info Details
-        titleEl.textContent = event.title;
-        dtEl.textContent = formatVietnameseDateTime(new Date(event.timestamp));
-        locEl.textContent = event.location || 'Trường Đại học Trà Vinh';
-        noteEl.textContent = event.note || 'Theo dõi thông báo từ Ban Cán Sự lớp DA26KDA.';
       }
 
-      /* ----------------------------------------------------------------------
-         9. RENDER RIGHT PANEL (CLOCK, STATS & QUEUE)
-         ---------------------------------------------------------------------- */
-      function renderLiveClock(now) {
-        const hmEl = document.getElementById('live-clock-hm');
-        const sEl = document.getElementById('live-clock-s');
-        const dateEl = document.getElementById('live-date-vn');
-
-        hmEl.textContent = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
-        sEl.textContent = `:${pad2(now.getSeconds())}`;
-
-        const dayName = VN_WEEKDAYS[now.getDay()];
-        dateEl.textContent = `${dayName}, ${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()}`;
-      }
-
-      function renderStatsAndQueue(nowMs, sortedData) {
-        const upcomingCount = sortedData.upcoming.length;
+      function renderRightStats(sortedData) {
+        const upCount = sortedData.upcoming.length;
         const pastCount = sortedData.past.length;
-        const totalCount = upcomingCount + pastCount;
-        const completionPct = totalCount > 0 ? Math.round((pastCount / totalCount) * 100) : 0;
+        const totalCount = sortedData.all.length;
+        const pct = totalCount > 0 ? Math.round((pastCount / totalCount) * 100) : 0;
 
-        document.getElementById('stat-upcoming').textContent = upcomingCount;
+        document.getElementById('stat-upcoming').textContent = upCount;
         document.getElementById('stat-past').textContent = pastCount;
         document.getElementById('stat-total').textContent = totalCount;
-        document.getElementById('stat-percent').textContent = `${completionPct}%`;
-        document.getElementById('stats-progress-bar').style.width = `${completionPct}%`;
-        document.getElementById('unified-badge-count').textContent = upcomingCount;
+        document.getElementById('stat-percent').textContent = `${pct}%`;
+        document.getElementById('stats-progress-bar').style.width = `${pct}%`;
+        document.getElementById('unified-badge-count').textContent = upCount;
 
-        // Update filter button active styles
+        // Highlight active filter stat card
         document.querySelectorAll('.filter-stat-btn').forEach((btn) => {
           const f = btn.getAttribute('data-filter');
           if (f === currentFilter) {
-            btn.classList.add('ring-1', 'ring-sky-400/70', 'bg-sky-500/15');
+            btn.classList.add('border-sky-400/50', 'bg-sky-500/10');
           } else {
-            btn.classList.remove('ring-1', 'ring-sky-400/70', 'bg-sky-500/15');
+            btn.classList.remove('border-sky-400/50', 'bg-sky-500/10');
           }
         });
+      }
+
+      function renderRightQueue(sortedData, featuredEventId) {
+        const listEl = document.getElementById('event-queue-list');
+        const filterLabelEl = document.getElementById('queue-filter-label');
 
         const filterLabels = {
-          upcoming: 'Sắp tới',
+          upcoming: 'Cố định • Tự ẩn hết hạn',
           past: 'Đã qua',
           all: 'Tất cả'
         };
-        document.getElementById('queue-filter-label').textContent = filterLabels[currentFilter] || 'Sắp tới';
-
-        // Determine list to render
-        let listToRender = [];
-        if (currentFilter === 'upcoming') {
-          listToRender = sortedData.upcoming;
-        } else if (currentFilter === 'past') {
-          listToRender = sortedData.past;
-        } else {
-          // Upcoming soonest first, followed by past most recent first
-          listToRender = [...sortedData.upcoming, ...sortedData.past];
+        if (filterLabelEl) {
+          filterLabelEl.textContent = filterLabels[currentFilter] || 'Cố định • Tự ẩn hết hạn';
         }
 
-        const queueContainer = document.getElementById('event-queue-list');
-        const featuredInfo = resolveFeaturedEvent(sortedData);
-        const activeId = featuredInfo.event ? featuredInfo.event.id : null;
+        let itemsToShow = [];
+        if (currentFilter === 'upcoming') {
+          itemsToShow = sortedData.upcoming;
+        } else if (currentFilter === 'past') {
+          itemsToShow = sortedData.past;
+        } else {
+          itemsToShow = [...sortedData.upcoming, ...sortedData.past];
+        }
 
-        if (listToRender.length === 0) {
-          queueContainer.innerHTML = `
-            <div class="standby-subcard rounded-xl p-4 text-center my-auto">
-              <p class="text-xs font-semibold text-slate-300">Không có sự kiện nào trong mục "${filterLabels[currentFilter]}"</p>
-              <p class="text-[11px] text-slate-400 mt-1">Bấm vào thẻ thống kê phía trên để đổi bộ lọc hoặc bấm "+ Thêm".</p>
+        if (itemsToShow.length === 0) {
+          listEl.innerHTML = `
+            <div class="standby-subcard rounded-xl p-4 text-center text-xs text-slate-400 my-auto">
+              Không có mục nào trong danh sách này.
             </div>
           `;
           return;
         }
 
-        // Build clean HTML string for smooth non-janky updates
-        const html = listToRender.map((ev) => {
-          const diffMs = ev.timestamp - nowMs;
-          const isPast = diffMs <= 0;
-          const isSelected = ev.id === activeId;
-          const miniCd = formatMiniCountdown(diffMs);
+        const now = Date.now();
+        const html = itemsToShow.map((ev) => {
+          const diffMs = ev.timestamp - now;
+          const isUpcoming = diffMs > 0;
+          const isFeatured = ev.id === featuredEventId;
+          const relBadge = formatRelativeCountdown(diffMs);
+          const dayContext = isUpcoming ? getDayContextLabel(ev.timestamp) : null;
 
-          const cardBorder = isSelected
-            ? 'border-sky-400/60 bg-sky-500/15 shadow-md shadow-sky-500/10'
-            : isPast
-              ? 'border-white/5 bg-slate-900/40 opacity-75 hover:opacity-100'
-              : 'border-white/8 bg-slate-900/65 hover:border-sky-400/35';
+          const cardBorder = isFeatured
+            ? 'border-sky-400/60 bg-sky-500/12 shadow-md shadow-sky-500/10'
+            : isUpcoming
+              ? 'border-white/8 bg-slate-900/55 hover:border-white/20'
+              : 'border-white/5 bg-slate-950/45 opacity-65 hover:opacity-90';
 
-          const badgeStyle = isPast
-            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/25'
-            : diffMs < 86400000
-              ? 'bg-amber-500/20 text-amber-200 border-amber-400/35'
-              : 'bg-sky-500/15 text-sky-300 border-sky-400/25';
+          const statusBadgeClass = isUpcoming
+            ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+            : 'bg-emerald-500/15 text-emerald-300 border-emerald-400/25';
+
+          const dayPillHtml = dayContext
+            ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border shrink-0 ${
+                dayContext === 'HÔM NAY'
+                  ? 'bg-rose-500/25 text-rose-200 border-rose-400/40'
+                  : 'bg-amber-500/20 text-amber-200 border-amber-400/35'
+              }">${dayContext}</span>`
+            : '';
+
+          const tagLabel = ev.period ? `${ev.tag} • ${ev.period}` : ev.tag;
 
           return `
-            <div data-event-id="${ev.id}" class="queue-item-card group rounded-xl border ${cardBorder} px-2.5 py-2 transition cursor-pointer flex items-center justify-between gap-2 shrink-0">
+            <div data-event-id="${ev.id}" class="queue-item-card group rounded-xl px-2.5 py-2 border transition cursor-pointer flex items-center justify-between gap-2 shrink-0 ${cardBorder}">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1.5 mb-0.5">
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider border ${getTagClasses(ev.tag)} shrink-0">
-                    ${escapeHtml(ev.period ? ev.period : ev.tag)}
+                  ${dayPillHtml}
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border shrink-0 ${getTagBadgeClasses(ev.tag)}">
+                    ${escapeHtml(tagLabel)}
                   </span>
-                  <h4 class="text-xs font-bold text-white truncate">
-                    ${escapeHtml(ev.title)}
-                  </h4>
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold border tabular-nums truncate ${statusBadgeClass}">
+                    ${escapeHtml(relBadge)}
+                  </span>
                 </div>
-                <div class="flex items-center gap-2 text-[10px] text-slate-400 truncate">
-                  <span class="font-mono tabular-nums text-slate-300 shrink-0">${formatShortDateTime(new Date(ev.timestamp))}${ev.endTime ? '–' + ev.endTime : ''}</span>
-                  <span>•</span>
-                  <span class="truncate">${escapeHtml(ev.location)}</span>
+                <div class="text-xs font-bold text-white truncate leading-snug">
+                  ${escapeHtml(ev.title)}
+                </div>
+                <div class="text-[10px] text-slate-400 truncate mt-0.5">
+                  ${escapeHtml(formatEventDateTime(ev.datetime, ev.endTime))} • ${escapeHtml(ev.location)}
                 </div>
               </div>
 
-              <div class="flex items-center gap-1.5 shrink-0">
-                <span class="font-mono tabular-nums px-2 py-0.5 rounded-md border text-[10px] font-bold ${badgeStyle}">
-                  ${miniCd}
-                </span>
-                <button type="button" data-edit-id="${ev.id}" class="edit-event-btn p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-white/10 transition" title="Chỉnh sửa sự kiện">
-                  <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                  </svg>
-                </button>
-              </div>
+              <!-- Edit Button -->
+              <button type="button" data-edit-id="${ev.id}" class="edit-event-btn p-2 rounded-lg bg-slate-800/80 hover:bg-sky-500/25 text-slate-300 hover:text-sky-200 border border-white/10 transition shrink-0" title="Chỉnh sửa">
+                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                </svg>
+              </button>
             </div>
           `;
         }).join('');
 
-        // Only replace DOM if content changed to preserve scroll position smoothly
-        if (queueContainer.dataset.lastHtml !== html) {
-          const prevScroll = queueContainer.scrollTop;
-          queueContainer.innerHTML = html;
-          queueContainer.scrollTop = prevScroll;
-          queueContainer.dataset.lastHtml = html;
-        }
-      }
-
-      function escapeHtml(str) {
-        return String(str || '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
+        listEl.innerHTML = html;
       }
 
       /* ----------------------------------------------------------------------
-         10. LIVE WEATHER WIDGET (TRA VINH, VINH LONG VIA OPEN-METEO API)
+         7. REAL-TIME CLOCK & MASTER TICK LOOP (1000ms)
          ---------------------------------------------------------------------- */
-      function mapWmoWeatherVietnam(code) {
-        if (code === 0) return { desc: 'Trời quang', type: 'sun' };
-        if (code === 1 || code === 2) return { desc: 'Ít mây', type: 'partly' };
-        if (code === 3) return { desc: 'Nhiều mây', type: 'cloud' };
-        if (code >= 45 && code <= 48) return { desc: 'Sương mù nhẹ', type: 'cloud' };
-        if (code >= 51 && code <= 67) return { desc: 'Mưa rào nhẹ', type: 'rain' };
-        if (code >= 80 && code <= 82) return { desc: 'Mưa rào', type: 'rain' };
-        if (code >= 95) return { desc: 'Mưa dông', type: 'storm' };
-        return { desc: 'Nắng ấm', type: 'partly' };
+      function tickDashboard() {
+        const now = new Date();
+        const hh = pad2(now.getHours());
+        const mm = pad2(now.getMinutes());
+        const ss = pad2(now.getSeconds());
+
+        document.getElementById('live-clock-hm').textContent = `${hh}:${mm}`;
+        document.getElementById('live-clock-s').textContent = `:${ss}`;
+        document.getElementById('live-date-vn').textContent = formatVietnameseDate(now);
+
+        updateNightStandbyMode(now);
+
+        const sortedData = getSortedEventGroups();
+        const featuredInfo = resolveFeaturedEvent(sortedData);
+
+        renderLeftPanel(featuredInfo);
+
+        // Re-render stats & queue list once per second (or immediately on manual trigger)
+        const currentSecond = now.getSeconds();
+        if (currentSecond !== lastTickSecond) {
+          lastTickSecond = currentSecond;
+          renderRightStats(sortedData);
+          renderRightQueue(sortedData, featuredInfo && featuredInfo.event ? featuredInfo.event.id : null);
+        }
       }
 
-      function getWeatherSvg(type) {
-        if (type === 'rain' || type === 'storm') {
-          return `<svg class="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 19.5v2m3-2v2m3-2v2" /></svg>`;
-        }
-        if (type === 'cloud') {
-          return `<svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" /></svg>`;
-        }
-        return `<svg class="w-5 h-5 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>`;
+      function updateNightStandbyMode(nowDate) {
+        const mins = nowDate.getHours() * 60 + nowDate.getMinutes();
+        const isNight = mins >= 22 * 60 + 30 || mins < 5 * 60 + 30;
+        document.body.classList.toggle('night-standby', isNight);
       }
 
-      async function fetchTraVinhWeather(manual = false) {
+      /* ----------------------------------------------------------------------
+         8. DYNAMIC URGENT REMINDER TICKER (AUTO-HIDES EXPIRED REMINDERS)
+         ---------------------------------------------------------------------- */
+      function rotateUrgentTicker() {
+        const tickerEl = document.getElementById('urgent-ticker-text');
+        if (!tickerEl) return;
+
+        const now = Date.now();
+        const activeReminders = BASE_URGENT_REMINDERS
+          .filter((item) => !item.expiresAt || new Date(item.expiresAt).getTime() > now)
+          .map((item) => item.text);
+
+        const sortedData = getSortedEventGroups();
+        if (sortedData.upcoming.length > 0) {
+          const nextItem = sortedData.upcoming[0];
+          const dayCtx = getDayContextLabel(nextItem.timestamp);
+          const prefix = dayCtx ? `[${dayCtx}] ` : '';
+          activeReminders.unshift(`${prefix}${nextItem.title} (${formatEventDateTime(nextItem.datetime, nextItem.endTime)}) tại ${nextItem.location}.`);
+        }
+
+        if (activeReminders.length === 0) return;
+        const msg = activeReminders[tickerIndex % activeReminders.length];
+        tickerIndex = (tickerIndex + 1) % activeReminders.length;
+        tickerEl.textContent = msg;
+      }
+
+      /* ----------------------------------------------------------------------
+         9. LIVE TRA VINH WEATHER (OPEN-METEO API + FALLBACK)
+         ---------------------------------------------------------------------- */
+      async function fetchTraVinhWeather(manualTrigger) {
         const tempEl = document.getElementById('weather-temp');
         const descEl = document.getElementById('weather-desc');
         const humEl = document.getElementById('weather-humidity');
         const windEl = document.getElementById('weather-wind');
-        const iconBox = document.getElementById('weather-icon-box');
 
         try {
+          // Trà Vinh coordinates: 9.9347° N, 106.3453° E
           const url = 'https://api.open-meteo.com/v1/forecast?latitude=9.9347&longitude=106.3453&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia%2FHo_Chi_Minh';
           const res = await fetch(url);
-          if (!res.ok) throw new Error('Weather HTTP error');
+          if (!res.ok) throw new Error('Weather API response error');
           const data = await res.json();
-          const cur = data.current;
+          if (data && data.current) {
+            const temp = Math.round(data.current.temperature_2m);
+            const hum = Math.round(data.current.relative_humidity_2m);
+            const wind = Math.round(data.current.wind_speed_10m);
+            const code = data.current.weather_code;
 
-          const temp = Math.round(cur.temperature_2m);
-          const hum = Math.round(cur.relative_humidity_2m);
-          const wind = Math.round(cur.wind_speed_10m);
-          const mapped = mapWmoWeatherVietnam(cur.weather_code);
+            tempEl.textContent = `${temp}°C`;
+            humEl.textContent = `${hum}%`;
+            windEl.textContent = `${wind}km/h`;
+            descEl.textContent = mapWmoWeatherCodeVi(code);
 
-          tempEl.textContent = `${temp}°C`;
-          descEl.textContent = mapped.desc;
-          humEl.textContent = `${hum}%`;
-          windEl.textContent = `${wind}km/h`;
-          iconBox.innerHTML = getWeatherSvg(mapped.type);
-
-          if (manual) {
-            showToast(`Đã cập nhật thời tiết Trà Vinh: ${temp}°C • ${mapped.desc}`, 'success');
+            if (manualTrigger) {
+              showToast(`Đã cập nhật thời tiết Trà Vinh: ${temp}°C • ${descEl.textContent}`);
+            }
           }
         } catch (err) {
-          // Graceful offline fallback for Tra Vinh tropical weather
-          tempEl.textContent = '29°C';
-          descEl.textContent = 'Nắng nhẹ';
-          humEl.textContent = '76%';
-          windEl.textContent = '12km/h';
-          if (manual) {
-            showToast('Đang hiển thị dữ liệu thời tiết dự phòng Trà Vinh', 'warn');
+          // Keep graceful fallback values if offline
+          if (manualTrigger) {
+            showToast('Đang hiển thị dữ liệu thời tiết Trà Vinh ngoại tuyến.');
           }
         }
       }
 
+      function mapWmoWeatherCodeVi(code) {
+        if (code === 0) return 'Trời quang';
+        if (code <= 2) return 'Nắng nhẹ';
+        if (code === 3) return 'Nhiều mây';
+        if (code >= 45 && code <= 48) return 'Sương mù';
+        if (code >= 51 && code <= 67) return 'Mưa rào';
+        if (code >= 80 && code <= 82) return 'Mưa rào nhẹ';
+        if (code >= 95) return 'Dông bão';
+        return 'Có mây';
+      }
+
       /* ----------------------------------------------------------------------
-         11. SCREEN WAKE LOCK & FULLSCREEN CONTROLS
+         10. WAKE LOCK API & FULLSCREEN CONTROLS
          ---------------------------------------------------------------------- */
+      async function requestWakeLockSilent() {
+        if (!('wakeLock' in navigator) || wakeLockSentinel) return;
+        try {
+          const dotEl = document.getElementById('wakelock-dot');
+          const btnEl = document.getElementById('wakelock-btn');
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          if (dotEl) dotEl.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+          if (btnEl) btnEl.classList.add('border-emerald-400/50', 'text-emerald-300');
+          wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+            if (dotEl) dotEl.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-slate-500';
+            if (btnEl) btnEl.classList.remove('border-emerald-400/50', 'text-emerald-300');
+          });
+        } catch (err) {
+          // Silently ignore if browser requires user gesture first
+        }
+      }
+
       async function toggleWakeLock() {
-        const dot = document.getElementById('wakelock-dot');
-        const btn = document.getElementById('wakelock-btn');
+        const dotEl = document.getElementById('wakelock-dot');
+        const btnEl = document.getElementById('wakelock-btn');
 
         if (!('wakeLock' in navigator)) {
-          showToast('Trình duyệt không hỗ trợ Wake Lock API', 'warn');
+          showToast('Trình duyệt này không hỗ trợ Wake Lock.');
+          return;
+        }
+
+        if (wakeLockSentinel) {
+          try {
+            await wakeLockSentinel.release();
+            wakeLockSentinel = null;
+            showToast('Đã tắt chế độ giữ sáng màn hình.');
+          } catch (err) {
+            console.warn(err);
+          }
           return;
         }
 
         try {
-          if (wakeLockSentinel) {
-            await wakeLockSentinel.release();
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          if (dotEl) dotEl.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+          if (btnEl) btnEl.classList.add('border-emerald-400/50', 'text-emerald-300');
+          showToast('Đã bật giữ sáng màn hình liên tục.');
+          wakeLockSentinel.addEventListener('release', () => {
             wakeLockSentinel = null;
-            dot.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-slate-500';
-            btn.classList.remove('border-amber-400/50', 'text-amber-300');
-            showToast('Đã tắt chế độ giữ sáng màn hình', 'info');
-          } else {
-            wakeLockSentinel = await navigator.wakeLock.request('screen');
-            dot.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
-            btn.classList.add('border-amber-400/50', 'text-amber-300');
-            showToast('Đã bật giữ sáng màn hình StandBy', 'success');
-
-            wakeLockSentinel.addEventListener('release', () => {
-              wakeLockSentinel = null;
-              dot.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-slate-500';
-              btn.classList.remove('border-amber-400/50', 'text-amber-300');
-            });
-          }
+            if (dotEl) dotEl.className = 'absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-slate-500';
+            if (btnEl) btnEl.classList.remove('border-emerald-400/50', 'text-emerald-300');
+          });
         } catch (err) {
-          showToast('Không thể kích hoạt giữ sáng màn hình trên thiết bị này', 'warn');
+          showToast('Không thể kích hoạt giữ sáng màn hình.');
         }
       }
 
-      function toggleFullscreen() {
-        const enterIcon = document.getElementById('fullscreen-icon-enter');
-        const exitIcon = document.getElementById('fullscreen-icon-exit');
-
-        if (!document.fullscreenElement) {
-          if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen()
-              .then(() => {
-                enterIcon.classList.add('hidden');
-                exitIcon.classList.remove('hidden');
-              })
-              .catch(() => {
-                showToast('Chế độ toàn màn hình bị hạn chế trong khung xem trước', 'warn');
-              });
+      async function toggleFullscreen() {
+        try {
+          if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+          } else {
+            await document.exitFullscreen();
           }
-        } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen()
-              .then(() => {
-                enterIcon.classList.remove('hidden');
-                exitIcon.classList.add('hidden');
-              })
-              .catch(() => {});
-          }
+        } catch (err) {
+          showToast('Trình duyệt hạn chế chế độ toàn màn hình.');
         }
+      }
+
+      function updateFullscreenIcons() {
+        const isFs = Boolean(document.fullscreenElement);
+        document.getElementById('fullscreen-icon-enter').classList.toggle('hidden', isFs);
+        document.getElementById('fullscreen-icon-exit').classList.toggle('hidden', !isFs);
       }
 
       /* ----------------------------------------------------------------------
-         12. MODAL CRUD (ADD / EDIT / DELETE / RESET DEFAULT DA26KDA)
+         11. MODAL CRUD OPERATIONS & TOAST FEEDBACK
          ---------------------------------------------------------------------- */
-      function toLocalDatetimeInputValue(isoString) {
-        const d = isoString ? new Date(isoString) : new Date(Date.now() + 3600000);
-        const yyyy = d.getFullYear();
-        const mo = pad2(d.getMonth() + 1);
-        const dd = pad2(d.getDate());
-        const hh = pad2(d.getHours());
-        const mi = pad2(d.getMinutes());
-        return `${yyyy}-${mo}-${dd}T${hh}:${mi}`;
+      function showToast(message) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'px-3.5 py-2 rounded-xl bg-slate-900/95 border border-sky-400/35 text-xs font-semibold text-sky-100 shadow-xl backdrop-blur-md transition-all duration-300';
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-6px)';
+          setTimeout(() => toast.remove(), 300);
+        }, 2800);
       }
 
-      function openEventModal(eventId = null) {
+      function openAddModal() {
+        document.getElementById('modal-title').textContent = 'Thêm Sự Kiện / Thông Báo Mới';
+        document.getElementById('form-event-id').value = '';
+        document.getElementById('form-title').value = '';
+        const defaultNext = new Date(Date.now() + 24 * 3600000);
+        defaultNext.setMinutes(0, 0, 0);
+        document.getElementById('form-datetime').value = toDateTimeLocalValue(defaultNext.toISOString());
+        document.getElementById('form-tag').value = 'THÔNG BÁO';
+        document.getElementById('form-location').value = '';
+        document.getElementById('form-note').value = '';
+        document.getElementById('delete-event-btn').classList.add('hidden');
+
         const modal = document.getElementById('event-modal');
-        const titleHeading = document.getElementById('modal-title');
-        const idInput = document.getElementById('form-event-id');
-        const titleInput = document.getElementById('form-title');
-        const dtInput = document.getElementById('form-datetime');
-        const tagInput = document.getElementById('form-tag');
-        const locInput = document.getElementById('form-location');
-        const noteInput = document.getElementById('form-note');
-        const deleteBtn = document.getElementById('delete-event-btn');
-        const resetBtn = document.getElementById('reset-defaults-btn');
-
-        confirmResetArmed = false;
-        confirmDeleteArmed = false;
-        resetBtn.textContent = 'Khôi phục mặc định DA26KDA';
-        deleteBtn.textContent = 'Xóa sự kiện này';
-
-        if (eventId) {
-          const ev = events.find((item) => item.id === eventId) || classSchedule.find((item) => item.id === eventId);
-          if (!ev) return;
-          titleHeading.textContent = 'Chỉnh Sửa Sự Kiện / Lịch Học';
-          idInput.value = ev.id;
-          titleInput.value = ev.title;
-          dtInput.value = toLocalDatetimeInputValue(ev.datetime);
-          tagInput.value = ev.tag;
-          locInput.value = ev.location;
-          noteInput.value = ev.note || '';
-          deleteBtn.classList.remove('hidden');
-        } else {
-          titleHeading.textContent = 'Thêm Sự Kiện / Lịch Học Mới';
-          idInput.value = '';
-          titleInput.value = '';
-          dtInput.value = toLocalDatetimeInputValue(null);
-          tagInput.value = 'THÔNG BÁO';
-          locInput.value = 'Trường Đại học Trà Vinh';
-          noteInput.value = '';
-          deleteBtn.classList.add('hidden');
-        }
-
         modal.classList.remove('hidden');
         modal.classList.add('flex');
       }
 
-      function closeEventModal() {
+      function openEditModal(itemId) {
+        const target = [...events, ...classSchedule].find((item) => item.id === itemId);
+        if (!target) return;
+
+        document.getElementById('modal-title').textContent = 'Chỉnh Sửa Sự Kiện / Lịch Học';
+        document.getElementById('form-event-id').value = target.id;
+        document.getElementById('form-title').value = target.title;
+        document.getElementById('form-datetime').value = toDateTimeLocalValue(target.datetime);
+        document.getElementById('form-tag').value = target.tag;
+        document.getElementById('form-location').value = target.location;
+        document.getElementById('form-note').value = target.note || '';
+        document.getElementById('delete-event-btn').classList.remove('hidden');
+
+        const modal = document.getElementById('event-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      function closeModal() {
         const modal = document.getElementById('event-modal');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
       }
 
+      function handleFormSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('form-event-id').value.trim();
+        const title = document.getElementById('form-title').value.trim();
+        const dtLocal = document.getElementById('form-datetime').value;
+        const tag = (document.getElementById('form-tag').value.trim() || 'THÔNG BÁO').toUpperCase();
+        const location = document.getElementById('form-location').value.trim();
+        const note = document.getElementById('form-note').value.trim();
+
+        if (!title || !dtLocal || !location) return;
+
+        const isoDate = new Date(dtLocal).toISOString();
+
+        if (id) {
+          const evIdx = events.findIndex((item) => item.id === id);
+          if (evIdx !== -1) {
+            events[evIdx] = { ...events[evIdx], title, datetime: isoDate, tag, location, note };
+            saveEvents();
+          } else {
+            const clsIdx = classSchedule.findIndex((item) => item.id === id);
+            if (clsIdx !== -1) {
+              classSchedule[clsIdx] = { ...classSchedule[clsIdx], title, datetime: isoDate, tag, location, note };
+              saveSchedule();
+            }
+          }
+          showToast('Đã cập nhật thông tin!');
+        } else {
+          const newItem = {
+            id: `custom-${Date.now()}`,
+            datetime: isoDate,
+            title,
+            location,
+            tag,
+            note
+          };
+          events.push(newItem);
+          saveEvents();
+          showToast('Đã thêm sự kiện mới vào hàng chờ!');
+        }
+
+        closeModal();
+        lastTickSecond = -1;
+        tickDashboard();
+        rotateUrgentTicker();
+      }
+
+      function deleteCurrentEvent() {
+        const id = document.getElementById('form-event-id').value.trim();
+        if (!id) return;
+
+        events = events.filter((item) => item.id !== id);
+        classSchedule = classSchedule.filter((item) => item.id !== id);
+        saveEvents();
+        saveSchedule();
+
+        if (selectedEventId === id) {
+          selectedEventId = null;
+          selectedWasUpcoming = false;
+        }
+
+        closeModal();
+        lastTickSecond = -1;
+        tickDashboard();
+        rotateUrgentTicker();
+        showToast('Đã xóa mục khỏi danh sách.');
+      }
+
+      function resetToDefaults() {
+        events = DEFAULT_EVENTS.map((e) => ({ ...e }));
+        classSchedule = DEFAULT_CLASS_SCHEDULE.map((c) => ({ ...c }));
+        saveEvents();
+        saveSchedule();
+        selectedEventId = null;
+        selectedWasUpcoming = false;
+        closeModal();
+        lastTickSecond = -1;
+        tickDashboard();
+        rotateUrgentTicker();
+        showToast('Đã khôi phục dữ liệu mặc định lớp DA26KDA.');
+      }
+
       /* ----------------------------------------------------------------------
-         13. URGENT REMINDER TICKER ROTATION (EVENTS + UPCOMING DAILY CLASSES)
+         12. UI EVENT LISTENERS
          ---------------------------------------------------------------------- */
-      function buildDynamicReminders() {
-        const nowMs = Date.now();
-        const nextClasses = classSchedule
-          .map((c) => ({ ...c, timestamp: new Date(c.datetime).getTime() }))
-          .filter((c) => c.timestamp > nowMs)
-          .sort((a, b) => a.timestamp - b.timestamp)
-          .slice(0, 2);
+      function bindUIEvents() {
+        // Portrait orientation dismiss
+        const dismissPortraitBtn = document.getElementById('dismiss-portrait-btn');
+        if (dismissPortraitBtn) {
+          dismissPortraitBtn.addEventListener('click', () => {
+            document.getElementById('portrait-warning').classList.remove('active-warning');
+          });
+        }
 
-        const classReminders = nextClasses.map((cls) => {
-          const d = new Date(cls.timestamp);
-          const dayShort = VN_WEEKDAYS_SHORT[d.getDay()];
-          const dateStr = `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`;
-          return `Lịch học ${dayShort} (${dateStr}) • ${cls.period || '07:00'}: ${cls.title} tại ${cls.location}.`;
-        });
-
-        return [...BASE_URGENT_REMINDERS, ...classReminders];
-      }
-
-      function rotateUrgentTicker() {
-        const el = document.getElementById('urgent-ticker-text');
-        if (!el) return;
-        const list = buildDynamicReminders();
-        tickerIndex = (tickerIndex + 1) % list.length;
-        el.textContent = list[tickerIndex];
-      }
-
-      /* ----------------------------------------------------------------------
-         14. MASTER TICK LOOP & EVENT BINDINGS
-         ---------------------------------------------------------------------- */
-      function tickDashboard() {
-        const now = new Date();
-        const nowMs = now.getTime();
-        const sortedData = getSortedEvents(nowMs);
-
-        renderLiveClock(now);
-        renderLeftPanel(nowMs, sortedData);
-        renderStatsAndQueue(nowMs, sortedData);
-      }
-
-      function initDashboard() {
-        // Dismiss portrait warning button
-        document.getElementById('dismiss-portrait-btn').addEventListener('click', () => {
-          document.getElementById('portrait-warning').classList.remove('active-warning');
-        });
-
-        // Back to nearest upcoming event button
+        // Back to nearest upcoming event
         document.getElementById('back-to-nearest-btn').addEventListener('click', () => {
           selectedEventId = null;
+          selectedWasUpcoming = false;
+          lastTickSecond = -1;
           tickDashboard();
-          showToast('Đã quay về mục sắp diễn ra gần nhất', 'info');
         });
 
         // Weather refresh on click
@@ -1355,199 +1465,146 @@
         // Wake Lock & Fullscreen buttons
         document.getElementById('wakelock-btn').addEventListener('click', toggleWakeLock);
         document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', updateFullscreenIcons);
 
-        // Filter Stat Buttons
+        // Filter stat cards
         document.querySelectorAll('.filter-stat-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             currentFilter = btn.getAttribute('data-filter') || 'upcoming';
+            lastTickSecond = -1;
             tickDashboard();
           });
         });
 
-        // Queue Delegation (Select event to inspect OR Edit button)
-        document.getElementById('event-queue-list').addEventListener('click', (e) => {
+        // Queue list delegation (Select item or Edit item)
+        const queueListEl = document.getElementById('event-queue-list');
+        queueListEl.addEventListener('click', (e) => {
           const editBtn = e.target.closest('.edit-event-btn');
           if (editBtn) {
             e.stopPropagation();
             const editId = editBtn.getAttribute('data-edit-id');
-            openEventModal(editId);
+            openEditModal(editId);
             return;
           }
 
           const card = e.target.closest('.queue-item-card');
           if (card) {
             const evId = card.getAttribute('data-event-id');
+            const targetItem = [...events, ...classSchedule].find((item) => item.id === evId);
             selectedEventId = evId;
+            selectedWasUpcoming = targetItem ? new Date(targetItem.datetime).getTime() > Date.now() : false;
+            lastTickSecond = -1;
             tickDashboard();
           }
         });
 
+        // Keyboard / USB-OTG shortcut support for broken touchscreen setups
+        document.addEventListener('keydown', (e) => {
+          const modal = document.getElementById('event-modal');
+          if (modal && !modal.classList.contains('hidden')) return;
+          if (e.key === 'Escape' && selectedEventId) {
+            selectedEventId = null;
+            selectedWasUpcoming = false;
+            lastTickSecond = -1;
+            tickDashboard();
+          } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            const sorted = getSortedEventGroups();
+            const pool = sorted.upcoming;
+            if (pool.length === 0) return;
+            const curIdx = pool.findIndex((item) => item.id === selectedEventId);
+            const nextIdx = e.key === 'ArrowDown'
+              ? (curIdx + 1) % pool.length
+              : (curIdx <= 0 ? pool.length - 1 : curIdx - 1);
+            selectedEventId = pool[nextIdx].id;
+            selectedWasUpcoming = true;
+            lastTickSecond = -1;
+            tickDashboard();
+          }
+        });
+
+        // Re-acquire Wake Lock automatically if screen/tab becomes visible
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            requestWakeLockSilent();
+          }
+        });
+
         // Modal controls
-        document.getElementById('open-add-modal-btn').addEventListener('click', () => openEventModal(null));
-        document.getElementById('close-modal-btn').addEventListener('click', closeEventModal);
-        document.getElementById('cancel-modal-btn').addEventListener('click', closeEventModal);
+        document.getElementById('open-add-modal-btn').addEventListener('click', openAddModal);
+        document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+        document.getElementById('cancel-modal-btn').addEventListener('click', closeModal);
+        document.getElementById('event-form').addEventListener('submit', handleFormSubmit);
+        document.getElementById('delete-event-btn').addEventListener('click', deleteCurrentEvent);
+        document.getElementById('reset-defaults-btn').addEventListener('click', resetToDefaults);
 
-        // Form Submit (Add or Edit)
-        document.getElementById('event-form').addEventListener('submit', (e) => {
-          e.preventDefault();
-          const id = document.getElementById('form-event-id').value.trim();
-          const title = document.getElementById('form-title').value.trim();
-          const dtVal = document.getElementById('form-datetime').value;
-          const tag = document.getElementById('form-tag').value.trim().toUpperCase() || 'THÔNG BÁO';
-          const location = document.getElementById('form-location').value.trim() || 'Đại học Trà Vinh';
-          const note = document.getElementById('form-note').value.trim();
-
-          if (!title || !dtVal) return;
-
-          const isoDatetime = new Date(dtVal).toISOString();
-
-          if (id) {
-            if (events.some((ev) => ev.id === id)) {
-              events = events.map((ev) =>
-                ev.id === id ? { ...ev, title, datetime: isoDatetime, tag, location, note } : ev
-              );
-              saveEvents();
-            } else {
-              classSchedule = classSchedule.map((ev) =>
-                ev.id === id ? { ...ev, title, datetime: isoDatetime, tag, location, note } : ev
-              );
-              saveSchedule();
-            }
-            selectedEventId = id;
-            showToast('Đã cập nhật thành công', 'success');
-          } else {
-            const newId = (tag === 'LỊCH HỌC' ? 'cls-' : 'da26kda-') + Date.now();
-            const newItem = {
-              id: newId,
-              title,
-              datetime: isoDatetime,
-              tag,
-              location,
-              note
-            };
-            if (tag === 'LỊCH HỌC') {
-              classSchedule.push(newItem);
-              saveSchedule();
-            } else {
-              events.push(newItem);
-              saveEvents();
-            }
-            selectedEventId = newId;
-            showToast('Đã thêm mới vào hàng chờ', 'success');
-          }
-
-          closeEventModal();
-          tickDashboard();
+        // Close modal when clicking backdrop
+        document.getElementById('event-modal').addEventListener('click', (e) => {
+          if (e.target.id === 'event-modal') closeModal();
         });
+      }
 
-        // Delete Event (2-step inline confirmation)
-        document.getElementById('delete-event-btn').addEventListener('click', (e) => {
-          const btn = e.currentTarget;
-          const id = document.getElementById('form-event-id').value;
-          if (!id) return;
+      /* ----------------------------------------------------------------------
+         13. OLED BURN-IN MICRO-SHIFT & 12-HOUR AUTO-REFRESH
+         ---------------------------------------------------------------------- */
+      function initOledPixelShift() {
+        const mainGrid = document.getElementById('standby-main-grid');
+        if (!mainGrid) return;
+        const offsets = [
+          [0, 0],
+          [2, 1],
+          [1, -2],
+          [-2, -1],
+          [-1, 2]
+        ];
+        let step = 0;
+        setInterval(() => {
+          step = (step + 1) % offsets.length;
+          const [dx, dy] = offsets[step];
+          mainGrid.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        }, 4 * 60 * 1000);
+      }
 
-          if (!confirmDeleteArmed) {
-            confirmDeleteArmed = true;
-            btn.textContent = 'Bấm lần nữa để xác nhận xóa!';
-            return;
-          }
+      function initAutoRefresh() {
+        const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
-          events = events.filter((ev) => ev.id !== id);
-          classSchedule = classSchedule.filter((ev) => ev.id !== id);
-          if (selectedEventId === id) selectedEventId = null;
-          saveEvents();
-          saveSchedule();
-          closeEventModal();
-          tickDashboard();
-          showToast('Đã xóa khỏi danh sách', 'info');
-        });
-
-        // Reset Default DA26KDA Events & Schedule (2-step inline confirmation)
-        document.getElementById('reset-defaults-btn').addEventListener('click', (e) => {
-          const btn = e.currentTarget;
-          if (!confirmResetArmed) {
-            confirmResetArmed = true;
-            btn.textContent = 'Bấm lần nữa để khôi phục gốc!';
-            return;
-          }
-
-          events = [...DEFAULT_EVENTS];
-          classSchedule = [...DEFAULT_CLASS_SCHEDULE];
-          selectedEventId = null;
-          saveEvents();
-          saveSchedule();
-          closeEventModal();
-          tickDashboard();
-          showToast('Đã khôi phục toàn bộ sự kiện & lịch học DA26KDA', 'success');
-        });
-
-        // Re-acquire Wake Lock automatically if tab becomes visible again
-        document.addEventListener('visibilitychange', async () => {
-          if (document.visibilityState === 'visible' && wakeLockSentinel !== null) {
-            try {
-              wakeLockSentinel = await navigator.wakeLock.request('screen');
-            } catch (_) {}
-          }
-        });
-
-        // Initial render & intervals
-        tickDashboard();
-        fetchTraVinhWeather(false);
-
-        setInterval(tickDashboard, 1000);
-        setInterval(rotateUrgentTicker, 8000);
-        setInterval(() => fetchTraVinhWeather(false), 15 * 60 * 1000);
-
-        // Hands-free gentle auto-scroll for broken-touchscreen StandBy phones
-        const queueEl = document.getElementById('event-queue-list');
-        if (queueEl) {
-          ['wheel', 'touchstart', 'pointerdown'].forEach((evtName) => {
-            queueEl.addEventListener(evtName, () => {
-              autoScrollPausedUntil = Date.now() + 15000;
-            }, { passive: true });
-          });
-
-          setInterval(() => {
-            if (Date.now() < autoScrollPausedUntil) return;
-            const maxScroll = queueEl.scrollHeight - queueEl.clientHeight;
-            if (maxScroll <= 4) return;
-
-            if (autoScrollDirection === 1) {
-              if (queueEl.scrollTop >= maxScroll - 2) {
-                autoScrollDirection = -1;
-                autoScrollPausedUntil = Date.now() + 4000;
-              } else {
-                queueEl.scrollTop += 1;
-              }
-            } else {
-              if (queueEl.scrollTop <= 2) {
-                autoScrollDirection = 1;
-                autoScrollPausedUntil = Date.now() + 5000;
-              } else {
-                queueEl.scrollTop -= 2;
-              }
-            }
-          }, 80);
-        }
-
-        // Auto-refresh page every 12 hours (43,200,000 ms) for long-term StandBy stability
-        const AUTO_REFRESH_12H_MS = 12 * 60 * 60 * 1000;
-        function scheduleAutoRefresh() {
+        function scheduleReload(delayMs) {
           setTimeout(() => {
             const modal = document.getElementById('event-modal');
             const isModalOpen = modal && !modal.classList.contains('hidden');
             if (isModalOpen) {
-              // Defer reload by 1 minute if user is currently editing an event
-              setTimeout(() => window.location.reload(), 60 * 1000);
-            } else {
-              window.location.reload();
+              // Defer reload by 60 seconds if user is actively editing
+              scheduleReload(60 * 1000);
+              return;
             }
-          }, AUTO_REFRESH_12H_MS);
+            window.location.reload();
+          }, delayMs);
         }
-        scheduleAutoRefresh();
+
+        scheduleReload(TWELVE_HOURS_MS);
       }
 
-      window.addEventListener('DOMContentLoaded', initDashboard);
+      /* ----------------------------------------------------------------------
+         14. BOOTSTRAP APPLICATION
+         ---------------------------------------------------------------------- */
+      function initDashboard() {
+        tickDashboard();
+        rotateUrgentTicker();
+        fetchTraVinhWeather(false);
+        bindUIEvents();
+        requestWakeLockSilent();
+        initOledPixelShift();
+        initAutoRefresh();
+
+        setInterval(tickDashboard, 1000);
+        setInterval(rotateUrgentTicker, 6500);
+        setInterval(() => fetchTraVinhWeather(false), 15 * 60 * 1000);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDashboard);
+      } else {
+        initDashboard();
+      }
     })();
   </script>
 </body>
